@@ -1,0 +1,241 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://whatif-engine.dev/schemas/character_schema.json",
+  "title": "WhatIfCharacterData",
+  "description": "JSON Schema for the W.H.A.T. I.F. character data model. This mirrors the UWhatIfCharacterData UPrimaryDataAsset structure and is used for validation, save/load, modding, and testing.",
+  "type": "object",
+  "required": [
+    "character_id",
+    "display_name",
+    "description",
+    "default_faction",
+    "character_tags",
+    "base_attribute_values",
+    "personality",
+    "default_combat_stance"
+  ],
+  "additionalProperties": false,
+  "properties": {
+
+    "character_id": {
+      "type": "string",
+      "description": "Unique, immutable identifier for this character. Use snake_case. Example: 'iron_sentinel_mk1'.",
+      "pattern": "^[a-z0-9_]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+
+    "display_name": {
+      "type": "string",
+      "description": "Human-readable display name shown in UI.",
+      "minLength": 1,
+      "maxLength": 128
+    },
+
+    "description": {
+      "type": "string",
+      "description": "Short description of the character (1-3 sentences).",
+      "maxLength": 512
+    },
+
+    "lore": {
+      "type": "string",
+      "description": "Extended background lore for the character.",
+      "maxLength": 4096
+    },
+
+    "portrait_path": {
+      "type": "string",
+      "description": "Soft path to portrait texture. Format: '/Game/Characters/CharacterId/T_CharacterId_Portrait'.",
+      "pattern": "^/Game/.*$"
+    },
+
+    "default_faction": {
+      "type": "string",
+      "description": "The character's default faction alignment.",
+      "enum": ["Unaffiliated", "Hero", "Villain", "Neutral", "Cosmic", "Synthetic"]
+    },
+
+    "character_tags": {
+      "type": "array",
+      "description": "GameplayTags that classify this character. Examples: 'Character.Role.Tank', 'Character.Origin.Synthetic', 'Character.Trait.Genius'.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9.]*$"
+      },
+      "uniqueItems": true
+    },
+
+    "base_mesh_path": {
+      "type": "string",
+      "description": "Soft path to the base skeletal mesh asset.",
+      "pattern": "^/Game/.*$"
+    },
+
+    "base_anim_blueprint_path": {
+      "type": "string",
+      "description": "Soft class path to the base animation blueprint.",
+      "pattern": "^/Game/.*$"
+    },
+
+    "base_attribute_values": {
+      "type": "object",
+      "description": "Base values for all gameplay attributes. Keys are GameplayTag strings, values are floats.",
+      "propertyNames": {
+        "pattern": "^Attribute\\.[A-Za-z]+$"
+      },
+      "properties": {
+        "Attribute.Strength":           { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.Speed":              { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.Durability":         { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.Energy":             { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.MaxEnergy":          { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.Intelligence":       { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.DefenseRating":      { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.AttackRating":       { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.MobilityRating":     { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.ReactionTime":       { "type": "number", "minimum": 0, "maximum": 10 },
+        "Attribute.Accuracy":           { "type": "number", "minimum": 0, "maximum": 100 },
+        "Attribute.RecoveryRate":       { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.TacticalCapability": { "type": "number", "minimum": 0, "maximum": 1000 },
+        "Attribute.ResourceEfficiency": { "type": "number", "minimum": 0, "maximum": 100 }
+      },
+      "additionalProperties": { "type": "number" }
+    },
+
+    "default_abilities": {
+      "type": "array",
+      "description": "Soft paths to UWhatIfAbilityData assets this character starts with.",
+      "items": {
+        "type": "string",
+        "pattern": "^/Game/.*$"
+      }
+    },
+
+    "default_equipment": {
+      "type": "array",
+      "description": "Soft paths to UWhatIfEquipmentData assets this character starts with.",
+      "items": {
+        "type": "string",
+        "pattern": "^/Game/.*$"
+      }
+    },
+
+    "default_mobility_class": {
+      "type": "string",
+      "description": "The character's default mobility classification.",
+      "enum": ["Grounded", "Flight", "Teleportation", "SpeedRunning", "Aquatic", "Space"]
+    },
+
+    "primary_energy_type": {
+      "type": "string",
+      "description": "The primary energy source this character uses.",
+      "enum": ["None", "Solar", "Arc", "Mystic", "Cosmic", "Neural", "Biological", "Mechanical", "Quantum"]
+    },
+
+    "personality": {
+      "type": "object",
+      "description": "AI personality values that influence decision-making in simulation.",
+      "required": ["aggression", "loyalty", "recklessness", "creativity", "self_preservation", "altruism"],
+      "additionalProperties": false,
+      "properties": {
+        "aggression": {
+          "type": "number",
+          "description": "0.0 = completely passive, 1.0 = extremely aggressive.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "loyalty": {
+          "type": "number",
+          "description": "0.0 = self-serving, 1.0 = fully loyal to allies.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "recklessness": {
+          "type": "number",
+          "description": "0.0 = calculated, 1.0 = acts without considering consequences.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "creativity": {
+          "type": "number",
+          "description": "0.0 = rigid tactics, 1.0 = highly adaptive and innovative.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "self_preservation": {
+          "type": "number",
+          "description": "0.0 = sacrificial, 1.0 = prioritizes own survival above all.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "altruism": {
+          "type": "number",
+          "description": "0.0 = selfish, 1.0 = prioritizes others' wellbeing over own.",
+          "minimum": 0.0, "maximum": 1.0
+        },
+        "personality_description": {
+          "type": "string",
+          "description": "Human-readable personality summary.",
+          "maxLength": 512
+        }
+      }
+    },
+
+    "default_combat_stance": {
+      "type": "string",
+      "description": "The character's default combat posture.",
+      "enum": ["Aggressive", "Defensive", "Balanced", "Protective", "Evasive", "Supportive"]
+    },
+
+    "base_reaction_time": {
+      "type": "number",
+      "description": "Base reaction time in seconds. Lower is faster.",
+      "minimum": 0.001,
+      "maximum": 10.0
+    },
+
+    "base_relationships": {
+      "type": "array",
+      "description": "Initial relationship entries with other characters.",
+      "items": {
+        "type": "object",
+        "required": ["target_character_id", "affinity_value", "relationship_type"],
+        "additionalProperties": false,
+        "properties": {
+          "target_character_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "affinity_value": {
+            "type": "number",
+            "description": "-1.0 = bitter enemy, 0.0 = neutral, 1.0 = closest ally.",
+            "minimum": -1.0,
+            "maximum": 1.0
+          },
+          "relationship_type": {
+            "type": "string",
+            "enum": ["Ally", "Enemy", "Rival", "Neutral", "Unknown"]
+          }
+        }
+      }
+    },
+
+    "incompatible_modification_tags": {
+      "type": "array",
+      "description": "GameplayTags of modifications this character cannot use.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9.]*$"
+      },
+      "uniqueItems": true
+    },
+
+    "max_carry_weight": {
+      "type": "number",
+      "description": "Maximum total weight of all equipped modifications (kg equivalent).",
+      "minimum": 0
+    },
+
+    "base_energy_capacity": {
+      "type": "number",
+      "description": "Base energy storage capacity. Modifications can increase this.",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,50 @@
+# Binaries and Build Output
+Binaries/
+Build/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# IDE Files
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.ncb
+*.vcxproj
+*.vcxproj.filters
+*.xcodeproj/
+*.xcworkspace/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# UE5 generated
+FeaturePacks/
+Samples/
+*.VC.db
+*.VC.opendb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Logs
+*.log

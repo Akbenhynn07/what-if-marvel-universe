@@ -1,0 +1,70 @@
+{
+  "character_id": "aegis_sentinel_alpha",
+  "display_name": "Aegis Sentinel Alpha",
+  "description": "A highly advanced synthetic warrior designed for defensive combat. Specializes in protecting allies and absorbing punishment, with adaptive armor systems that reinforce under sustained fire.",
+  "lore": "The Aegis Sentinel Alpha was the first of a planned series of synthetic guardian units. Built with a focus on endurance over offense, the Alpha unit was programmed with a protective mandate: no ally under its watch falls. Its neural architecture prioritizes threat assessment and interposition over direct engagement, making it a formidable shield on the battlefield but a less effective offensive actor. The Alpha's energy systems run on a Mechanical core, making it independent of exotic power sources — reliable, if not spectacular.",
+
+  "default_faction": "Hero",
+  "character_tags": [
+    "Character.Role.Tank",
+    "Character.Role.Protector",
+    "Character.Origin.Synthetic",
+    "Character.Trait.Resilient",
+    "Character.Trait.Logical"
+  ],
+
+  "default_mobility_class": "Grounded",
+  "primary_energy_type": "Mechanical",
+
+  "base_attribute_values": {
+    "Attribute.Strength":           320.0,
+    "Attribute.Speed":              150.0,
+    "Attribute.Durability":         750.0,
+    "Attribute.Energy":             500.0,
+    "Attribute.MaxEnergy":          500.0,
+    "Attribute.Intelligence":       420.0,
+    "Attribute.DefenseRating":      680.0,
+    "Attribute.AttackRating":       210.0,
+    "Attribute.MobilityRating":     140.0,
+    "Attribute.ReactionTime":       0.45,
+    "Attribute.Accuracy":           72.0,
+    "Attribute.RecoveryRate":       85.0,
+    "Attribute.TacticalCapability": 390.0,
+    "Attribute.ResourceEfficiency": 78.0
+  },
+
+  "personality": {
+    "aggression":         0.2,
+    "loyalty":            0.95,
+    "recklessness":       0.1,
+    "creativity":         0.45,
+    "self_preservation":  0.3,
+    "altruism":           0.9,
+    "personality_description": "The Aegis Sentinel is methodical and protective. It rarely initiates conflict but responds to threats against allies with overwhelming defensive force. Its decision-making is logical and risk-averse, always calculating optimal protection vectors before acting."
+  },
+
+  "default_combat_stance": "Protective",
+
+  "base_reaction_time": 0.45,
+
+  "base_relationships": [
+    {
+      "target_character_id": "vanguard_prime",
+      "affinity_value": 0.7,
+      "relationship_type": "Ally"
+    },
+    {
+      "target_character_id": "corruptor_null",
+      "affinity_value": -0.9,
+      "relationship_type": "Enemy"
+    }
+  ],
+
+  "incompatible_modification_tags": [
+    "Modification.Type.Biological",
+    "Modification.Type.Mystic"
+  ],
+
+  "max_carry_weight": 850.0,
+  "base_energy_capacity": 500.0
+}

@@ -1,0 +1,25 @@
+{
+    "FileVersion": 3,
+    "EngineAssociation": "5.4",
+    "Category": "Simulation",
+    "Description": "W.H.A.T. I.F. — What Happens After Transformation: Infinite Futures. An AI-powered character transformation and alternate timeline simulation engine.",
+    "Modules": [
+        {
+            "Name": "WhatIf",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "WhatIfEditor",
+            "Type": "Editor",
+            "LoadingPhase": "PostEngineInit"
+        }
+    ],
+    "Plugins": [
+        { "Name": "GameplayAbilities", "Enabled": true },
+        { "Name": "ModularGameplay", "Enabled": true },
+        { "Name": "GameFeatures", "Enabled": true },
+        { "Name": "ModelViewViewModel", "Enabled": true },
+        { "Name": "StructUtils", "Enabled": true }
+    ]
+}
