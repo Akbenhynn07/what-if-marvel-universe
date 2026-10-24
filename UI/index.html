@@ -1,0 +1,4931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>W.H.A.T. I.F. — Infinite Futures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<style>
+/* ============================================================
+   DESIGN TOKENS
+============================================================ */
+:root {
+  --bg:           #080808;
+  --bg-panel:     rgba(18, 18, 18, 0.94);
+  --bg-card:      rgba(24, 24, 24, 0.9);
+  --bg-card-hover:rgba(36, 36, 36, 0.95);
+  --border:       rgba(255, 255, 255, 0.15);
+  --border-bright:rgba(255, 255, 255, 0.45);
+  --cyan:         #ffffff;
+  --cyan-dim:     rgba(255, 255, 255, 0.08);
+  --cyan-glow:    0 0 16px rgba(255, 255, 255, 0.22), 0 0 35px rgba(255, 255, 255, 0.1);
+  --gold:         #e2e2e2;
+  --green:        #ffffff;
+  --red:          #cccccc;
+  --orange:       #aaaaaa;
+  --purple:       #888888;
+  --text:         #cccccc;
+  --text-dim:     #777777;
+  --text-bright:  #ffffff;
+  --radius:       8px;
+  --radius-sm:    5px;
+  --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+  --theme-transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* ============================================================
+   FULL-SCREEN CHARACTER LOADING OVERLAY & LOGIC
+============================================================ */
+#loading-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  width: 100vw; height: 100vh;
+  background: #080808;
+  backdrop-filter: blur(30px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+#loading-overlay.active {
+  opacity: 1; pointer-events: all;
+}
+
+.loader-fullscreen-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(0, 200, 255, 0.16) 0%, transparent 60%),
+    radial-gradient(circle at 15% 15%, rgba(0, 100, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(180, 0, 80, 0.1) 0%, transparent 40%);
+}
+
+.loader-grid-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 200, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Cybernetic Corner Brackets on Viewport Edges */
+.hud-corner {
+  position: absolute; width: 44px; height: 44px; border-color: var(--cyan); border-style: solid; opacity: 0.8;
+}
+.hud-tl { top: 24px; left: 24px; border-width: 3px 0 0 3px; }
+.hud-tr { top: 24px; right: 24px; border-width: 3px 3px 0 0; }
+.hud-bl { bottom: 24px; left: 24px; border-width: 0 0 3px 3px; }
+.hud-br { bottom: 24px; right: 24px; border-width: 0 3px 3px 0; }
+
+.loader-hero-container {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  max-width: 720px; width: 90%; text-align: center;
+}
+
+/* Glowing Orb Spinner with Exact Logo Circular Crop */
+.loader-emblem-orb {
+  position: relative; width: 220px; height: 220px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 28px;
+  box-shadow: 0 0 60px rgba(0, 200, 255, 0.45), inset 0 0 30px rgba(0, 200, 255, 0.2);
+  background: radial-gradient(circle at center, rgba(0,30,60,0.95), rgba(4,8,20,0.98));
+}
+
+/* Pure 100% Circular Crop for uploaded logo images */
+.loader-emblem-img-wrap {
+  width: 155px; height: 155px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+  border: 2px solid rgba(0, 200, 255, 0.5);
+  box-shadow: 0 0 30px rgba(0, 200, 255, 0.7);
+  position: relative; z-index: 3;
+}
+
+.loader-emblem-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center;
+  filter: drop-shadow(0 0 14px var(--cyan));
+}
+
+svg.loader-ring-svg {
+  position: absolute; inset: -20px; width: 260px; height: 260px;
+  transform: rotate(-90deg);
+}
+.loader-ring-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 7; }
+.loader-ring-fill { fill: none; stroke: var(--cyan); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.1s linear; filter: drop-shadow(0 0 10px var(--cyan)); }
+
+.loader-char-title {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 38px;
+  letter-spacing: 4px; color: #ffffff; text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(0, 200, 255, 0.7), 0 0 60px rgba(0, 200, 255, 0.3);
+  margin-bottom: 8px;
+}
+.loader-emblem-badge {
+  font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--cyan);
+  background: rgba(0, 200, 255, 0.12); border: 1px solid var(--border-bright);
+  padding: 6px 20px; border-radius: 30px; text-transform: uppercase;
+  letter-spacing: 2px; margin-bottom: 24px; display: inline-block;
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.25);
+}
+.loader-pct {
+  font-family: 'Share Tech Mono', monospace; font-size: 64px; color: var(--cyan);
+  text-shadow: 0 0 35px rgba(0,200,255,0.85); margin-bottom: 12px; font-weight: 700;
+  line-height: 1;
+}
+.loader-status {
+  font-family: 'Outfit', sans-serif; font-size: 16px; color: #ffffff;
+  height: 32px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  letter-spacing: 1px;
+}
+.loader-progress-track {
+  width: 100%; height: 10px; background: rgba(255,255,255,0.08);
+  border-radius: 6px; overflow: hidden; margin-top: 28px;
+  border: 1px solid rgba(0, 200, 255, 0.25);
+  box-shadow: 0 0 24px rgba(0, 200, 255, 0.2);
+}
+.loader-progress-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, #555555, #ffffff, #888888);
+  border-radius: 6px; transition: width 0.08s linear;
+  box-shadow: 0 0 20px var(--cyan);
+}
+
+/* ============================================================
+   LIGHT THEME
+============================================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+/* Smooth transitions for everything on theme switch */
+*, *::before, *::after { transition: var(--theme-transition); }
+/* But don't transition layout/transform props */
+.stat-bar-fill, .health-fill, .win-bar-fill, .utility-fill, .ring-fill,
+.personality-bar-fill { transition: width 0.8s cubic-bezier(0.4,0,0.2,1), stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1) !important; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- animated bg grid ---- */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,60,120,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+#app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
+
+/* ---- TOPBAR ---- */
+#topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 28px;
+  height: 60px;
+  background: rgba(4, 8, 20, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 100;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-bright);
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.theme-toggle:hover {
+  background: var(--cyan);
+  color: #fff;
+  box-shadow: var(--cyan-glow);
+  transform: rotate(20deg) scale(1.08);
+}
+.logo {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  text-shadow: var(--cyan-glow);
+  margin-right: 20px;
+  white-space: nowrap;
+}
+.logo span { color: rgba(0,200,255,0.4); margin: 0 1px; }
+
+.nav-tabs { display: flex; gap: 4px; flex: 1; }
+.nav-tab {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--cyan); border-color: var(--border); background: var(--cyan-dim); }
+.nav-tab.active {
+  color: var(--cyan);
+  border-color: var(--border-bright);
+  background: rgba(0,200,255,0.12);
+  text-shadow: 0 0 10px rgba(0,200,255,0.5);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.phase-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,232,122,0.4);
+  color: var(--green);
+  background: rgba(0,232,122,0.08);
+}
+
+/* ---- MAIN CONTENT ---- */
+#content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; }
+
+/* ---- SCREENS ---- */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ============================================================
+   SHARED COMPONENTS
+============================================================ */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+}
+.panel-header {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-header .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.badge-cyan  { background: rgba(0,200,255,0.12); border: 1px solid rgba(0,200,255,0.4); color: var(--cyan); }
+.badge-green { background: rgba(0,232,122,0.12); border: 1px solid rgba(0,232,122,0.4); color: var(--green); }
+.badge-red   { background: rgba(255,68,85,0.12);  border: 1px solid rgba(255,68,85,0.4);  color: var(--red); }
+.badge-orange{ background: rgba(255,140,66,0.12); border: 1px solid rgba(255,140,66,0.4); color: var(--orange); }
+.badge-gold  { background: rgba(255,200,74,0.12); border: 1px solid rgba(255,200,74,0.4); color: var(--gold); }
+.badge-purple{ background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.4); color: var(--purple); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+.btn-primary {
+  background: var(--cyan);
+  color: #000000;
+  box-shadow: 0 0 20px rgba(0,200,255,0.35);
+}
+.btn-primary:hover { background: #e0e0e0; box-shadow: 0 0 30px rgba(255,255,255,0.4); transform: translateY(-2px); }
+.btn-outline {
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--border-bright);
+}
+.btn-outline:hover { background: var(--cyan-dim); }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(255,68,85,0.4); }
+.btn-danger:hover { background: rgba(255,68,85,0.12); }
+.btn-large { padding: 14px 32px; font-size: 15px; letter-spacing: 2px; width: 100%; }
+
+.stat-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.stat-label { font-size: 11px; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; width: 100px; flex-shrink: 0; font-family: 'Rajdhani', sans-serif; font-weight: 600; }
+.stat-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+.stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.stat-value { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-bright); width: 36px; text-align: right; }
+
+.stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.stat-value { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-bright); width: 36px; text-align: right; }
+
+/* ============================================================
+   HIGH-TECH SCI-FI 3D LAB WORKSHOP
+============================================================ */
+#screen-editor {
+  position: relative;
+  background: radial-gradient(circle at 50% 40%, rgba(0, 45, 90, 0.65) 0%, rgba(4, 8, 20, 0.98) 85%);
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-bright);
+  min-height: calc(100vh - 90px);
+}
+
+.lab-environment {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(0, 200, 255, 0.14) 0%, transparent 60%),
+    linear-gradient(rgba(0, 200, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+.lab-floor-grid {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 260px; pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 180, 255, 0.18) 100%);
+  transform: perspective(600px) rotateX(60deg);
+  transform-origin: bottom center;
+  background-image:
+    linear-gradient(rgba(0, 200, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.25) 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: 0.7;
+}
+
+.laser-scan-line {
+  position: absolute; width: 100%; height: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--cyan), #ffffff, var(--cyan), transparent);
+  box-shadow: 0 0 15px var(--cyan);
+  animation: scanVertical 3.8s ease-in-out infinite;
+  opacity: 0.7; z-index: 5;
+}
+@keyframes scanVertical {
+  0%, 100% { top: 8%; opacity: 0.2; }
+  50% { top: 88%; opacity: 0.9; }
+}
+
+.lab-workspace-grid {
+  position: relative; z-index: 10;
+  display: grid;
+  grid-template-columns: 290px 1fr 290px;
+  gap: 16px;
+  padding: 16px;
+  min-height: calc(100vh - 180px);
+}
+
+.lab-col { display: flex; flex-direction: column; gap: 12px; }
+
+/* CENTER 3D ROTATABLE CHARACTER STAGE */
+.lab-center-stage {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  perspective: 1200px;
+  cursor: grab; user-select: none;
+  border-radius: var(--radius);
+  background: rgba(0, 20, 50, 0.2);
+  border: 1px dashed rgba(0, 200, 255, 0.2);
+  transition: border-color 0.3s ease;
+}
+.lab-center-stage:active { cursor: grabbing; }
+.lab-center-stage.drag-over {
+  border-color: #ffffff; box-shadow: 0 0 35px rgba(255, 255, 255, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+.top-slot-overlay {
+  position: absolute; top: 12px; z-index: 12; width: 260px;
+}
+
+.lab-pedestal-ring {
+  position: absolute; bottom: 80px; width: 340px; height: 130px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 200, 255, 0.65);
+  box-shadow: 0 0 50px rgba(0, 200, 255, 0.5), inset 0 0 35px rgba(0, 200, 255, 0.3);
+  background: radial-gradient(ellipse at center, rgba(0, 200, 255, 0.3) 0%, transparent 70%);
+  transform: rotateX(72deg);
+  animation: spinPedestal 25s linear infinite;
+  pointer-events: none;
+}
+@keyframes spinPedestal {
+  0% { transform: rotateX(72deg) rotateZ(0deg); }
+  100% { transform: rotateX(72deg) rotateZ(360deg); }
+}
+
+.char-3d-model-wrapper {
+  width: 320px; height: 420px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.08s ease-out;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 8; margin-top: 50px;
+}
+
+.char-3d-card {
+  width: 100%; height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 200, 255, 0.35);
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  background: radial-gradient(ellipse at center, rgba(0,90,180,0.35) 0%, rgba(4,8,20,0.96) 80%);
+}
+
+.char-3d-card img {
+  width: 100%; height: 100%; object-fit: cover; object-position: top;
+  filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.6));
+}
+
+.model-scanline {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,200,255,0.08) 50%, transparent 100%);
+  background-size: 100% 12px;
+}
+
+.model-tech-hud {
+  position: absolute; bottom: 10px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(4,8,20,0.85); backdrop-filter: blur(8px);
+  padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,200,255,0.3);
+}
+
+.rotation-bar-hud {
+  display: flex; align-items: center; gap: 12px; margin-top: 14px;
+  background: rgba(4,8,20,0.85); backdrop-filter: blur(10px);
+  padding: 6px 16px; border-radius: 30px; border: 1px solid rgba(0,200,255,0.3);
+  z-index: 10;
+}
+
+.rot-btn {
+  background: rgba(0,200,255,0.1); border: 1px solid rgba(0,200,255,0.3);
+  color: var(--cyan); border-radius: 16px; padding: 4px 12px; font-size: 11px;
+  cursor: pointer; transition: all 0.2s ease; font-family: 'Share Tech Mono', monospace;
+}
+.rot-btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 12px var(--cyan); }
+.rot-hint { font-size: 11px; color: var(--text-dim); }
+
+/* SLOTS CARDS & DRAG OVER STYLING */
+.mod-slot-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  cursor: pointer; transition: all 0.25s ease;
+  position: relative; overflow: hidden;
+}
+.mod-slot-card:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,200,255,0.25); transform: translateY(-2px); }
+.mod-slot-card.selected { border-color: var(--cyan); box-shadow: 0 0 24px rgba(0,200,255,0.4); background: rgba(0,100,200,0.15); }
+.mod-slot-card.drag-over {
+  border-color: #ffffff !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.12) !important; transform: scale(1.02);
+}
+
+.slot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.slot-icon { font-size: 18px; margin-right: 6px; }
+.slot-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase; }
+.slot-name { font-size: 13px; font-weight: 600; color: var(--text-bright); margin-bottom: 3px; }
+.slot-sub { font-size: 11px; color: var(--text-dim); }
+.slot-drag-hint { font-size: 9px; color: var(--cyan); opacity: 0.6; margin-top: 6px; font-family: 'Share Tech Mono', monospace; text-transform: uppercase; }
+
+/* DRAG & DROP ACCESSORY RACK */
+.lab-inventory-bar {
+  position: relative; z-index: 15;
+  background: rgba(4,8,20,0.92); backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(0,200,255,0.3);
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.inventory-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #fff; display: flex; flex-direction: column; }
+.inventory-rack { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; }
+
+.drag-mod-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 140px;
+  cursor: grab; transition: all 0.2s ease;
+  display: flex; align-items: center; gap: 8px;
+  user-select: none;
+}
+.drag-mod-item:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgba(0,200,255,0.3); transform: translateY(-3px); }
+.drag-mod-item.dragging { opacity: 0.4; border-color: var(--green); }
+.drag-mod-icon { font-size: 20px; }
+.drag-mod-name { font-size: 11px; font-weight: 600; color: var(--text-bright); }
+.drag-mod-slot { font-size: 9px; color: var(--cyan); text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+
+/* Left: Character Profile */
+.char-profile { grid-row: 1 / 3; display: flex; flex-direction: column; gap: 0; }
+.portrait-area {
+  position: relative;
+  background: radial-gradient(ellipse at center, rgba(0,60,120,0.5) 0%, rgba(4,8,20,0.9) 70%);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px;
+  display: flex; flex-direction: column; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.portrait-frame {
+  width: 140px; height: 160px;
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at center, rgba(0,100,200,0.3) 0%, rgba(0,20,60,0.8) 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 0 24px rgba(0,200,255,0.2), inset 0 0 30px rgba(0,100,200,0.2);
+  overflow: hidden;
+}
+.portrait-frame::before, .portrait-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--cyan);
+  border-style: solid;
+  opacity: 0.8;
+}
+.portrait-frame::before { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+.portrait-frame::after  { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+.char-svg {
+  width: 100px; height: 130px;
+  filter: drop-shadow(0 0 12px rgba(0,200,255,0.7));
+}
+.char-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 1.5px;
+  color: var(--text-bright);
+  text-align: center;
+  margin-top: 12px;
+  text-shadow: 0 0 8px rgba(0,200,255,0.3);
+}
+.char-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 8px; }
+
+.char-stats { padding: 14px 16px; flex: 1; }
+
+.resource-rings { display: flex; justify-content: space-around; padding: 12px 16px; border-top: 1px solid var(--border); }
+.ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ring-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; text-transform: uppercase; }
+.ring-val { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-bright); text-align: center; }
+
+svg.ring { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 4; }
+.ring-fill  { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1); }
+
+/* Center: Mod Slots */
+.mod-slots-panel { grid-column: 2; grid-row: 1; }
+.mod-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px;
+}
+.mod-slot {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.mod-slot::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,200,255,0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: var(--transition);
+}
+.mod-slot:hover { border-color: var(--border-bright); background: var(--bg-card-hover); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.mod-slot:hover::before { opacity: 1; }
+.mod-slot.selected { border-color: var(--cyan); box-shadow: 0 0 0 1px rgba(0,200,255,0.3), inset 0 0 20px rgba(0,200,255,0.06); }
+.mod-slot.incompatible { border-color: rgba(255,140,66,0.5); }
+
+.slot-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.slot-icon {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  background: rgba(0,200,255,0.1);
+  border: 1px solid rgba(0,200,255,0.2);
+  flex-shrink: 0;
+}
+.slot-type { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; }
+.slot-name { font-weight: 600; font-size: 13px; color: var(--text-bright); margin-top: 2px; line-height: 1.2; }
+.slot-empty { font-size: 12px; color: var(--text-dim); border: 1px dashed rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; text-align: center; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.slot-warning { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--orange); margin-top: 6px; }
+
+/* Right: Mod Details */
+.mod-details { grid-column: 3; grid-row: 1; }
+.mod-detail-icon {
+  width: 60px; height: 60px; border-radius: 10px; margin: 16px auto;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  background: rgba(0,200,255,0.1);
+  border: 1px solid rgba(0,200,255,0.3);
+  box-shadow: 0 0 20px rgba(0,200,255,0.15);
+}
+.mod-detail-name { text-align: center; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; color: var(--text-bright); padding: 0 16px; }
+
+.detail-section { padding: 10px 16px; }
+.detail-section-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; margin-bottom: 8px; }
+.detail-section-title.green { color: var(--green); }
+.detail-section-title.red   { color: var(--red); }
+.detail-section-title.orange{ color: var(--orange); }
+.detail-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text); margin-bottom: 5px; }
+.detail-item .icon { font-size: 11px; }
+
+.cost-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.cost-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.cost-key { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; }
+.cost-val { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--text-bright); }
+
+.detail-actions { display: flex; gap: 8px; padding: 14px 16px; }
+
+/* Bottom: Effective Attrs */
+.effective-bar {
+  grid-column: 2; grid-row: 2;
+}
+.effective-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  padding: 12px 16px;
+}
+.eff-item { display: flex; flex-direction: column; gap: 3px; }
+.eff-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; }
+.eff-vals { display: flex; align-items: center; gap: 6px; }
+.eff-before { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.eff-arrow { font-size: 10px; color: var(--text-dim); }
+.eff-after  { font-family: 'Share Tech Mono', monospace; font-size: 13px; }
+.eff-after.up   { color: var(--green); }
+.eff-after.down { color: var(--red); }
+.eff-after.same { color: var(--text-bright); }
+.eff-delta { font-size: 10px; }
+.eff-delta.up   { color: var(--green); }
+.eff-delta.down { color: var(--red); }
+
+/* ============================================================
+   TIMELINE EXPLORER
+============================================================ */
+#screen-timeline .layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: 1fr 120px;
+  gap: 16px;
+  height: calc(100vh - 100px);
+}
+.timeline-graph-panel { grid-column: 1; grid-row: 1; position: relative; overflow: hidden; }
+.timeline-svg-wrap { width: 100%; height: 100%; }
+#timeline-svg { width: 100%; height: 100%; }
+
+.node-card {
+  cursor: pointer;
+  transition: var(--transition);
+}
+.node-rect {
+  rx: 8; ry: 8;
+  fill: rgba(12,20,40,0.88);
+  stroke: rgba(0,200,255,0.35);
+  stroke-width: 1.5;
+  transition: var(--transition);
+}
+.node-card:hover .node-rect { stroke: var(--cyan); stroke-width: 2; }
+.node-card.active .node-rect { stroke: var(--cyan); stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(0,200,255,0.6)); }
+.node-card.branch-b .node-rect { stroke: rgba(255,140,66,0.5); }
+.node-card.branch-b.active .node-rect { stroke: var(--orange); filter: drop-shadow(0 0 8px rgba(255,140,66,0.6)); }
+
+.timeline-detail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; }
+.narrative-panel { grid-column: 1; grid-row: 2; }
+
+/* ============================================================
+   SIMULATION CHAMBER
+============================================================ */
+#screen-sim .layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: 16px;
+  height: calc(100vh - 100px);
+}
+.sim-config { grid-column: 1; }
+.combatant-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex; align-items: center; gap: 10px;
+  transition: var(--transition);
+}
+.combatant-card:hover { border-color: var(--border-bright); }
+.combatant-avatar { width: 42px; height: 42px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.combatant-info { flex: 1; min-width: 0; }
+.combatant-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combatant-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.vs-divider { text-align: center; padding: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 3px; color: var(--text-dim); position: relative; }
+.vs-divider::before, .vs-divider::after {
+  content: '';
+  position: absolute; top: 50%; width: 40%;
+  height: 1px; background: var(--border);
+}
+.vs-divider::before { left: 0; }
+.vs-divider::after  { right: 0; }
+
+.config-field { padding: 12px 14px; }
+.config-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; margin-bottom: 6px; }
+.config-select {
+  width: 100%; padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text); font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: var(--transition);
+}
+.config-select:focus { border-color: var(--border-bright); }
+
+.seed-input-row { display: flex; gap: 8px; align-items: center; }
+.seed-input {
+  flex: 1; padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--cyan); font-family: 'Share Tech Mono', monospace; font-size: 12px;
+  outline: none;
+}
+.seed-btn { padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-dim); cursor: pointer; transition: var(--transition); font-size: 14px; }
+.seed-btn:hover { color: var(--cyan); border-color: var(--border-bright); }
+
+.toggle-row { display: flex; justify-content: space-between; align-items: center; }
+.toggle { position: relative; width: 38px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px; cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid var(--border);
+}
+.toggle input:checked + .toggle-slider { background: rgba(0,200,255,0.25); border-color: var(--cyan); }
+.toggle-slider::before {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%; background: var(--text-dim);
+  transition: var(--transition);
+}
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+/* Arena */
+.sim-arena {
+  grid-column: 2;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: radial-gradient(ellipse at 50% 80%, rgba(0,20,60,0.9) 0%, rgba(4,6,14,0.97) 70%);
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.arena-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 50%, rgba(0,100,200,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 70% 50%, rgba(160,20,60,0.12) 0%, transparent 70%);
+}
+.arena-floor {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(0deg, rgba(0,10,30,0.8) 0%, transparent 100%);
+}
+.arena-content {
+  position: relative; z-index: 2;
+  flex: 1;
+  display: flex; align-items: center; justify-content: space-around; padding: 20px;
+}
+.fighter {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  flex: 0 0 180px;
+}
+.fighter-name-hud {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px;
+  letter-spacing: 2px; text-transform: uppercase; text-align: center;
+}
+.health-hud { width: 160px; }
+.health-track { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; position: relative; }
+.health-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; position: relative; }
+.health-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%); animation: shimmer 2s infinite; }
+@keyframes shimmer { 0%,100%{opacity:0} 50%{opacity:1} }
+.health-fill.cyan-fill { background: linear-gradient(90deg, #666666, #ffffff); box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+.health-fill.red-fill { background: linear-gradient(90deg, #222222, #777777); box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
+.health-text { display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+
+.fighter-sprite {
+  font-size: 60px;
+  filter: drop-shadow(0 0 20px rgba(0,200,255,0.7));
+  animation: float 3s ease-in-out infinite;
+}
+.fighter-sprite.enemy { filter: drop-shadow(0 0 20px rgba(255,68,85,0.7)); animation-delay: 0.5s; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+.vs-arena { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 36px; color: rgba(255,255,255,0.1); letter-spacing: 4px; position: relative; }
+.vs-arena::after {
+  content: '';
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5} 50%{transform:translate(-50%,-50%) scale(1.5);opacity:1} }
+
+.arena-hud {
+  position: relative; z-index: 2;
+  display: flex; justify-content: center; align-items: center; gap: 16px;
+  padding: 10px 20px;
+  background: rgba(4,8,20,0.7);
+  border-top: 1px solid var(--border);
+}
+.round-badge { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.round-badge span { color: var(--cyan); }
+.sim-status { font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 2px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.sim-status .dot-anim { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.win-bar-wrap { padding: 10px 20px; background: rgba(4,8,20,0.7); border-top: 1px solid var(--border); position: relative; z-index: 2; }
+.win-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-family: 'Rajdhani', sans-serif; margin-bottom: 5px; letter-spacing: 1px; }
+.win-bar-track { height: 6px; background: rgba(255,68,85,0.3); border-radius: 3px; overflow: hidden; }
+.win-bar-fill { height: 100%; background: linear-gradient(90deg, #555555, #ffffff); border-radius: 4px; transition: width 0.4s ease; }
+
+/* Combat Log */
+.sim-log { grid-column: 3; overflow-y: auto; }
+.log-entry {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 12px; line-height: 1.4;
+  transition: background 0.2s;
+  animation: fadeInLog 0.3s ease;
+}
+@keyframes fadeInLog { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+.log-entry:hover { background: rgba(255,255,255,0.02); }
+.log-round { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); flex-shrink: 0; padding-top: 1px; }
+.log-icon { flex-shrink: 0; }
+.log-text { color: var(--text); }
+.log-text .cyan { color: var(--cyan); }
+.log-text .red   { color: var(--red); }
+.log-text .gold  { color: var(--gold); }
+.log-text .green { color: var(--green); }
+
+.utility-section { padding: 12px 14px; border-top: 1px solid var(--border); }
+.utility-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; margin-bottom: 8px; }
+.utility-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.utility-action { font-size: 11px; color: var(--text); width: 64px; flex-shrink: 0; }
+.utility-track { flex: 1; height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.utility-fill { height: 100%; border-radius: 2px; background: var(--cyan); }
+.utility-score { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); width: 32px; text-align: right; }
+
+/* ============================================================
+   CHARACTER LAB
+============================================================ */
+#screen-lab .layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  padding-bottom: 20px;
+}
+.char-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+.char-card:hover { border-color: var(--border-bright); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+.char-card-portrait {
+  height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 64px;
+  position: relative;
+}
+.char-card-body { padding: 14px; }
+.char-card-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; color: var(--text-bright); margin-bottom: 6px; }
+.char-card-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; }
+.char-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.char-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px 14px; border-top: 1px solid var(--border); }
+.char-card-stat { display: flex; justify-content: space-between; font-size: 11px; }
+.char-card-stat .k { color: var(--text-dim); font-family: 'Rajdhani', sans-serif; }
+.char-card-stat .v { font-family: 'Share Tech Mono', monospace; color: var(--text-bright); }
+.select-btn-wrap { padding: 12px 14px; }
+
+/* ============================================================
+   CODEX
+============================================================ */
+#screen-codex .layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; height: calc(100vh - 100px); }
+.codex-nav { overflow-y: auto; }
+.codex-nav-item { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 10px; }
+.codex-nav-item:hover { background: var(--cyan-dim); }
+.codex-nav-item.active { background: rgba(0,200,255,0.1); border-right: 2px solid var(--cyan); }
+.codex-icon { font-size: 18px; }
+.codex-title { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px; color: var(--text); }
+.codex-sub { font-size: 10px; color: var(--text-dim); }
+.codex-detail { overflow-y: auto; }
+.codex-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+.codex-avatar { font-size: 48px; }
+.codex-headinfo h2 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 22px; color: var(--text-bright); }
+.codex-headinfo p { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+.codex-headinfo .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+.codex-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.codex-section { }
+.codex-section h3 { font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; }
+.personality-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.personality-label { font-size: 12px; color: var(--text); width: 110px; flex-shrink: 0; }
+.personality-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; }
+.personality-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #555555, #ffffff); }
+.personality-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--text-dim); width: 30px; text-align: right; }
+.rel-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 8px 10px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.rel-name { font-size: 13px; color: var(--text-bright); font-family: 'Rajdhani', sans-serif; font-weight: 600; flex: 1; }
+.rel-affinity { font-family: 'Share Tech Mono', monospace; font-size: 12px; }
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,200,255,0.4); }
+
+/* ============================================================
+   MARVEL LOGO & HERO SECTION (ENDGAME IRON MAN MARK LXXXV)
+============================================================ */
+#screen-hero {
+  position: relative;
+  min-height: calc(100vh - 54px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: radial-gradient(ellipse at 50% 18%, rgba(20, 32, 54, 0.7) 0%, rgba(3, 6, 14, 0.98) 75%);
+  padding: 24px 20px 80px 20px;
+}
+
+/* ============================================================
+   FULL SCREEN MARVEL INTRO SPLASH
+============================================================ */
+#marvel-intro-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  background-color: #080808;
+  background-image: url('assets/marvel_intro_bg_hd.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 64px;
+  cursor: pointer;
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
+  transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1), transform 0.85s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.85s;
+}
+
+#marvel-intro-screen.dismissed {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.05);
+  pointer-events: none;
+}
+
+.marvel-intro-enter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  animation: introTextFloat 2.6s infinite ease-in-out alternate;
+}
+
+@keyframes introTextFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
+.marvel-intro-enter-btn {
+  background: rgba(15, 15, 15, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 40px;
+  padding: 12px 32px 14px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 255, 255, 0.15);
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: center;
+}
+
+.marvel-intro-enter-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #ffffff;
+  transform: scale(1.04);
+  box-shadow: 0 14px 45px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.7);
+}
+
+.marvel-intro-enter-btn:hover .enter-text {
+  color: #000000;
+}
+
+.marvel-intro-enter-btn:hover .enter-subtext {
+  color: #333333;
+}
+
+.enter-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+  transition: color 0.2s ease;
+}
+
+.enter-subtext {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  color: rgba(210, 210, 210, 0.85);
+  transition: color 0.2s ease;
+}
+
+/* TOPBAR AUDIO HUD & INTRO NAV */
+.topbar-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 18, 18, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 5px 14px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #d0d0d0;
+  transition: all 0.2s ease;
+}
+
+.topbar-audio-btn:hover {
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.topbar-audio-btn.playing {
+  border-color: #ffffff;
+  color: #ffffff;
+  background: rgba(35, 35, 35, 0.92);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.35);
+}
+
+.btn-intro-nav {
+  background: rgba(237, 29, 36, 0.2);
+  border: 1px solid rgba(237, 29, 36, 0.5);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.btn-intro-nav:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #fff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+.logo-marvel-badge {
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Impact', 'Rajdhani', sans-serif;
+  font-size: 12px;
+  padding: 2px 6px;
+  margin-right: 6px;
+  border-radius: 2px;
+  letter-spacing: 0.8px;
+  font-weight: 900;
+}
+
+/* Quote Box & Danger Hero Button */
+.hero-quote-box {
+  margin: 12px auto 20px auto;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 3px solid #ffffff;
+  border-radius: 4px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.quote-text {
+  font-family: 'Outfit', sans-serif;
+  font-style: italic;
+  font-size: 15.5px;
+  color: #ffffff;
+  line-height: 1.5;
+}
+
+.quote-author {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #aaaaaa;
+  letter-spacing: 1px;
+}
+
+.btn-hero-danger {
+  background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+  color: #000;
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 18px rgba(237, 29, 36, 0.45);
+}
+
+.btn-hero-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(237, 29, 36, 0.7);
+  border-color: #fff;
+}
+
+.titan-dust-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 75% 60%, rgba(255, 100, 40, 0.16) 0%, transparent 50%),
+              radial-gradient(circle at 25% 40%, rgba(160, 40, 220, 0.14) 0%, transparent 55%);
+}
+
+/* Equalizer Bars */
+.eq-bars {
+  display: inline-flex; align-items: flex-end; gap: 3px; height: 14px;
+}
+.eq-bar {
+  width: 3px; background: #ffffff; border-radius: 2px;
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
+}
+.eq-bar:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.eq-bar:nth-child(2) { height: 90%; animation-delay: 0.3s; }
+.eq-bar:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+.eq-bar:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+.eq-bar:nth-child(5) { height: 50%; animation-delay: 0.15s; }
+
+@keyframes eqBounce {
+  0% { height: 20%; }
+  100% { height: 100%; }
+}
+
+/* HERO CINEMATIC STAGE */
+.hero-cinematic-stage {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center;
+  position: relative; z-index: 5;
+}
+
+.hero-img-container {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 200, 255, 0.2);
+  background: #000;
+}
+
+.hero-main-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-img-container:hover .hero-main-img {
+  transform: scale(1.02);
+}
+
+.hero-vignette-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(3, 6, 14, 0.7) 80%, rgba(3, 6, 14, 0.95) 100%),
+              linear-gradient(180deg, transparent 65%, rgba(3, 6, 14, 0.95) 100%);
+}
+
+.hero-lightning-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 35%, rgba(0, 200, 255, 0.18) 0%, transparent 60%);
+  animation: energyPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes energyPulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.9; }
+}
+
+/* Arc Reactor Pulse */
+.hero-arc-pulse {
+  position: absolute;
+  top: 51%; left: 50.5%; transform: translate(-50%, -50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, rgba(255, 255, 255, 0.6) 40%, transparent 70%);
+  box-shadow: 0 0 25px #ffffff, 0 0 50px rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  animation: arcFlash 2s infinite alternate;
+}
+
+@keyframes arcFlash {
+  0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+}
+
+.hero-scene-stamp {
+  position: absolute; bottom: 18px; left: 22px; z-index: 4;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.stamp-badge {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px;
+  color: #ffffff; background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 3px 10px; border-radius: 4px; display: inline-block; width: fit-content;
+}
+
+.stamp-text {
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+  color: #fff; letter-spacing: 1.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+}
+
+/* BRIEFING CARD & CONTROLS */
+.hero-briefing-card {
+  width: 100%; max-width: 1100px;
+  margin-top: 24px;
+  background: rgba(8, 14, 28, 0.85); backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 200, 255, 0.3); border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.7);
+  text-align: center;
+}
+
+.hero-meta-strip {
+  display: flex; justify-content: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+}
+
+.hero-pill-cyan {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px;
+  background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff; padding: 4px 14px; border-radius: 20px;
+}
+
+.hero-pill-gold {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #cccccc; padding: 4px 14px; border-radius: 20px;
+}
+
+.hero-pill-red {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #aaaaaa; padding: 4px 14px; border-radius: 20px;
+}
+
+.hero-title {
+  font-family: 'Rajdhani', sans-serif; font-weight: 900;
+  font-size: clamp(28px, 4.2vw, 48px);
+  color: #fff; letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 25px rgba(0, 200, 255, 0.5), 0 0 50px rgba(0, 150, 255, 0.3);
+  margin-bottom: 12px;
+}
+
+.hero-description {
+  font-family: 'Outfit', sans-serif; font-size: clamp(14px, 1.6vw, 16px);
+  color: #cccccc; max-width: 820px; margin: 0 auto 24px auto;
+  line-height: 1.6;
+}
+
+.hero-actions-group {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 24px;
+}
+
+.btn-hero-primary {
+  background: #ffffff;
+  color: #000; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 12px 28px; border-radius: 8px; border: 1px solid #ffffff;
+  cursor: pointer; box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+  transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-hero-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 35px rgba(0, 220, 255, 0.8);
+}
+
+.btn-hero-secondary {
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cccccc; font-family: 'Rajdhani', sans-serif; font-weight: 600;
+  font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 12px 22px; border-radius: 8px; cursor: pointer; transition: all 0.25s ease;
+}
+.btn-hero-secondary:hover {
+  background: rgba(255, 255, 255, 0.18); color: #fff; border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.hero-telemetry-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.telemetry-box {
+  background: rgba(4, 8, 20, 0.6); padding: 10px 14px; border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.telemetry-box .k { font-size: 10px; font-family: 'Rajdhani', sans-serif; color: var(--text-dim); letter-spacing: 1px; display: block; margin-bottom: 3px; }
+.telemetry-box .v { font-size: 13px; font-family: 'Share Tech Mono', monospace; color: #ffffff; font-weight: 700; }
+
+/* ============================================================
+   STRICT MONOCHROME STYLES (BLACK, GREY, WHITE ONLY)
+============================================================ */
+:root {
+  --bg:           #080808 !important;
+  --bg-panel:     rgba(18, 18, 18, 0.94) !important;
+  --bg-card:      rgba(24, 24, 24, 0.9) !important;
+  --bg-card-hover:rgba(36, 36, 36, 0.95) !important;
+  --border:       rgba(255, 255, 255, 0.15) !important;
+  --border-bright:rgba(255, 255, 255, 0.45) !important;
+  --cyan:         #ffffff !important;
+  --cyan-dim:     rgba(255, 255, 255, 0.08) !important;
+  --cyan-glow:    0 0 16px rgba(255, 255, 255, 0.22) !important;
+  --gold:         #e2e2e2 !important;
+  --green:        #ffffff !important;
+  --red:          #cccccc !important;
+  --orange:       #aaaaaa !important;
+  --purple:       #888888 !important;
+  --text:         #cccccc !important;
+  --text-dim:     #777777 !important;
+  --text-bright:  #ffffff !important;
+}
+
+body {
+  background: #080808 !important;
+  color: #cccccc !important;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
+}
+
+body::after {
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 70%) !important;
+}
+
+#topbar {
+  background: rgba(12, 12, 12, 0.96) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.logo {
+  color: #ffffff !important;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+}
+.logo span { color: rgba(255, 255, 255, 0.3) !important; }
+
+.nav-tab { color: #777777 !important; }
+.nav-tab:hover { color: #ffffff !important; background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 255, 255, 0.2) !important; }
+.nav-tab.active {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4) !important;
+}
+
+.badge {
+  background: #181818 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+.badge-cyan, .badge-green, .badge-gold {
+  background: #202020 !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+.badge-red, .badge-orange, .badge-purple {
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #cccccc !important;
+}
+
+.btn-primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.25) !important;
+}
+.btn-primary:hover {
+  background: #e0e0e0 !important;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: #141414 !important;
+  color: #ffffff !important;
+  border: 1px solid #444444 !important;
+}
+.btn-outline:hover {
+  background: #222222 !important;
+  border-color: #ffffff !important;
+}
+
+.btn-danger {
+  background: #181818 !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+}
+.btn-danger:hover {
+  background: #282828 !important;
+  border-color: #ffffff !important;
+}
+
+.logo-marvel-badge {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Impact', 'Rajdhani', sans-serif !important;
+  font-size: 12px;
+  padding: 2px 6px;
+  margin-right: 6px;
+  border-radius: 2px;
+  letter-spacing: 0.8px;
+}
+
+.topbar-audio-btn {
+  background: #181818 !important;
+  border: 1px solid #444444 !important;
+  color: #cccccc !important;
+}
+.topbar-audio-btn:hover {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+.topbar-audio-btn.playing {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  background: #252525 !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.25) !important;
+}
+
+.btn-intro-nav {
+  background: #141414 !important;
+  border: 1px solid #444444 !important;
+  color: #ffffff !important;
+}
+.btn-intro-nav:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+.eq-bar {
+  background: #ffffff !important;
+}
+
+.hero-quote-box {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-left: 3px solid #ffffff !important;
+}
+.quote-text { color: #e5e5e5 !important; }
+.quote-author { color: #888888 !important; }
+
+.hero-pill-cyan, .hero-pill-gold, .hero-pill-red, .hero-pill-green {
+  background: #181818 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.btn-hero-primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25) !important;
+}
+.btn-hero-primary:hover {
+  background: #e0e0e0 !important;
+}
+
+.btn-hero-secondary {
+  background: #181818 !important;
+  color: #ffffff !important;
+  border: 1px solid #444444 !important;
+}
+.btn-hero-secondary:hover {
+  background: #262626 !important;
+  border-color: #ffffff !important;
+}
+
+.btn-hero-danger {
+  background: #222222 !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
+}
+.btn-hero-danger:hover {
+  background: #333333 !important;
+  border-color: #ffffff !important;
+}
+
+.telemetry-box {
+  background: #121212 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.telemetry-box .v { color: #ffffff !important; }
+
+.health-fill.cyan-fill { background: linear-gradient(90deg, #666666, #ffffff); box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+.health-fill.red-fill { background: linear-gradient(90deg, #222222, #777777); box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
+.win-bar-fill {
+  background: linear-gradient(90deg, #666666, #ffffff) !important;
+}
+.win-bar-track {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.sim-status .dot-anim {
+  background: #ffffff !important;
+  box-shadow: 0 0 6px #ffffff !important;
+}
+.fighter-sprite { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4)) !important; }
+.fighter-sprite.enemy { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.2)) !important; }
+
+/* Dedicated Iron Man Widget on Hero Screen */
+.hero-ironman-widget {
+  width: 100%;
+  max-width: 680px;
+  margin: 16px auto;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+}
+.hero-ironman-widget:hover {
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  background: #202020;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 255, 255, 0.15);
+}
+.widget-avatar-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  background: #101010;
+}
+.widget-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.widget-info {
+  flex: 1;
+  text-align: left;
+}
+.widget-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #888888;
+  letter-spacing: 1.5px;
+}
+.widget-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+.widget-hint {
+  font-size: 11.5px;
+  color: #cccccc;
+  font-family: 'Outfit', sans-serif;
+}
+.btn-widget-open {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.btn-widget-open:hover {
+  background: #d4d4d4;
+}
+
+/* Battleworld Styles */
+.btn-battleworld-portal {
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ffffff;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-battleworld-portal:hover {
+  background: #cccccc;
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+}
+
+.battleworld-hero-banner {
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.battleworld-hero-banner:hover {
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.15);
+}
+.bw-badge-pill {
+  display: inline-block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+.bw-banner-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.bw-banner-desc {
+  font-size: 13px;
+  color: #888888;
+  margin-top: 4px;
+  max-width: 780px;
+  line-height: 1.5;
+}
+.btn-battleworld-main {
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.btn-battleworld-main:hover {
+  background: #e0e0e0;
+  transform: scale(1.04);
+}
+
+.char-card.selected {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.25) !important;
+}
+
+.char-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 14px 14px 14px;
+}
+.btn-card-bw {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+}
+.btn-card-bw:hover {
+  background: #d4d4d4;
+  transform: translateY(-1px);
+}
+.btn-card-3d {
+  background: #181818;
+  color: #ffffff;
+  border: 1px solid #444444;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+}
+.btn-card-3d:hover {
+  background: #282828;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   SMOOTH 60FPS SCREEN SHATTER & PIECE DISINTEGRATION
+   Zero Lag · GPU Hardware Composited · Monochrome
+============================================================ */
+
+/* Button Click Pulse */
+.marvel-intro-enter-btn.clicked {
+  transform: scale(1.08) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 50px rgba(255, 255, 255, 0.9) !important;
+  border-color: #ffffff !important;
+  transition: all 0.15s ease-out !important;
+}
+.marvel-intro-enter-btn.clicked .enter-text {
+  color: #000000 !important;
+}
+.marvel-intro-enter-btn.clicked .enter-subtext {
+  color: #222222 !important;
+}
+
+/* Subtle non-lagging camera shock */
+body.snap-screen-shake {
+  animation: smoothShock 0.35s ease-out both;
+}
+
+@keyframes smoothShock {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.015) translate(-4px, 2px); }
+  50% { transform: scale(1.008) translate(3px, -2px); }
+  75% { transform: scale(1.002) translate(-1px, 1px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+
+#marvel-intro-screen {
+  will-change: opacity, transform;
+  transition: opacity 0.5s ease-out;
+}
+
+#marvel-intro-screen.dismissed {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+
+/* Fullscreen Overlay */
+#cinematic-warp-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+#cinematic-warp-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* GPU Hardware-Accelerated 3D Shatter Stage */
+#screen-shatter-stage {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  z-index: 2;
+}
+
+.disintegration-shard {
+  position: absolute;
+  background-image: url('assets/marvel_intro_bg_hd.png');
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
+  will-change: transform, opacity;
+  pointer-events: none;
+  transform-origin: center center;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Canvas Particle Layer for Floating Ash Dust */
+#snap-particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Subtle, fast energy flash */
+.snap-flash {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#cinematic-warp-overlay.active .snap-flash {
+  animation: cleanFlash 0.5s ease-out forwards;
+}
+
+@keyframes cleanFlash {
+  0% { opacity: 0; }
+  20% { opacity: 0.75; }
+  100% { opacity: 0; }
+}
+
+/* Cosmic Shockwave Ring */
+.snap-shockwave {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 20px; height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 40px #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+#cinematic-warp-overlay.active .snap-shockwave {
+  animation: cleanShockwave 0.85s cubic-bezier(0.1, 0.85, 0.2, 1) forwards;
+}
+
+@keyframes cleanShockwave {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  100% {
+    width: 150vw;
+    height: 150vw;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Smooth Hero Section Entrance (Zero Blur to ensure 60fps) */
+#screen-hero.hero-entrance-active .hero-cinematic-stage {
+  animation: heroStageIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes heroStageIn {
+  0% {
+    transform: scale(0.96) translateY(24px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+#screen-hero.hero-entrance-active .hero-title {
+  animation: heroTitleReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+}
+
+@keyframes heroTitleReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+    letter-spacing: 5px;
+    text-shadow: 0 0 45px rgba(255, 255, 255, 0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  }
+}
+
+#screen-hero.hero-entrance-active .hero-quote-box {
+  animation: heroFadeUp 0.8s ease-out 0.28s both;
+}
+
+#screen-hero.hero-entrance-active .hero-description {
+  animation: heroFadeUp 0.8s ease-out 0.38s both;
+}
+
+#screen-hero.hero-entrance-active .hero-ironman-widget {
+  animation: heroWidgetIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
+}
+
+@keyframes heroWidgetIn {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) scale(0.95);
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+  }
+}
+
+#screen-hero.hero-entrance-active .hero-actions-group {
+  animation: heroFadeUp 0.8s ease-out 0.58s both;
+}
+
+#screen-hero.hero-entrance-active .hero-telemetry-grid {
+  animation: heroFadeUp 0.8s ease-out 0.68s both;
+}
+
+@keyframes heroFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="loading-overlay">
+  <div class="loader-fullscreen-bg"></div>
+  <div class="loader-grid-bg"></div>
+  <div class="hud-corner hud-tl"></div>
+  <div class="hud-corner hud-tr"></div>
+  <div class="hud-corner hud-bl"></div>
+  <div class="hud-corner hud-br"></div>
+
+  <div class="loader-hero-container">
+    <div class="loader-emblem-orb">
+      <svg class="loader-ring-svg" viewBox="0 0 260 260">
+        <circle class="loader-ring-track" cx="130" cy="130" r="115"/>
+        <circle class="loader-ring-fill" id="loader-ring" cx="130" cy="130" r="115"
+          style="stroke-dasharray:722.5;stroke-dashoffset:722.5"/>
+      </svg>
+      <div class="loader-emblem-img-wrap" id="loader-icon-wrap">
+        <div id="loader-icon" style="font-size:64px;">⚛️</div>
+      </div>
+    </div>
+    <div class="loader-char-title" id="loader-char-name">IRON MAN</div>
+    <div class="loader-emblem-badge" id="loader-emblem">ARC REACTOR CORE</div>
+    <div class="loader-pct" id="loader-pct">0%</div>
+    <div class="loader-status" id="loader-status">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);"></span>
+      <span id="loader-msg">Getting your resources ready...</span>
+    </div>
+    <div class="loader-progress-track">
+      <div class="loader-progress-fill" id="loader-progress-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= GLOBAL BACKGROUND AUDIO: MARVEL AVENGERS THEME ======= -->
+<audio id="avengers-audio" loop preload="auto" src="assets/avengers_official_theme.mp3"></audio>
+
+<!-- ======= FIRST SCREEN: FULL-SCREEN MARVEL LOGO SPLASH ======= -->
+<div id="marvel-intro-screen" onclick="enterMarvelCinematicUniverse()">
+  <div class="marvel-intro-enter-container">
+    <div class="marvel-intro-enter-btn" id="marvel-enter-btn" onclick="enterMarvelCinematicUniverse(event)">
+      <span class="enter-text">enter the Marvel Cinematic Universe - where you are the boss</span>
+      <span class="enter-subtext">CLICK ANYWHERE TO ENTER · 🔊 AVENGERS THEME</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======= SCREEN DISINTEGRATION & SHATTER OVERLAY ======= -->
+<div id="cinematic-warp-overlay" onclick="skipThanosSnap(event)">
+  <div id="screen-shatter-stage"></div>
+  <canvas id="snap-particle-canvas"></canvas>
+  <div class="snap-flash" id="snap-flash"></div>
+  <div class="snap-shockwave" id="snap-shockwave"></div>
+</div>
+
+<div id="app">
+
+  <!-- ======= TOPBAR ======= -->
+  <div id="topbar">
+    <div class="logo" onclick="showMarvelIntro()" title="Return to Marvel Cinematic Intro" style="cursor:pointer;">
+      <span class="logo-marvel-badge">MARVEL</span> W<span>·</span>H<span>·</span>A<span>·</span>T<span>·</span>I<span>·</span>F
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="switchTab('hero')">⚡ Titan Showdown</div>
+      <div class="nav-tab" onclick="switchTab('lab')">Character Lab</div>
+      <div class="nav-tab" onclick="switchTab('editor')">Transformation Editor</div>
+      <div class="nav-tab" onclick="switchTab('sim')">Simulation Chamber</div>
+      <div class="nav-tab" onclick="switchTab('timeline')">Timeline Explorer</div>
+      <div class="nav-tab" onclick="switchTab('codex')">Codex</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-audio-btn" id="topbar-audio-btn" onclick="toggleAvengersTheme()" title="Play / Pause Avengers Theme">
+        <span class="audio-hud-icon">🔊</span>
+        <span class="audio-hud-text" id="topbar-audio-text">Avengers Theme</span>
+        <div class="eq-bars">
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+          <span class="eq-bar"></span>
+        </div>
+      </div>
+      <button class="btn-intro-nav" onclick="showMarvelIntro()" title="Return to Marvel Intro Screen">
+        🎬 Intro Screen
+      </button>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme">🌙</button>
+    </div>
+  </div>
+
+  <!-- ======= CONTENT ======= -->
+  <div id="content">
+
+    <!-- ===== OPENING HERO SECTION: IRON MAN WITH THANOS SHOWDOWN ===== -->
+    <div id="screen-hero" class="screen active">
+
+      <!-- MAIN HERO STAGE: IRON MAN & THANOS TITAN SHOWDOWN -->
+      <div class="hero-cinematic-stage">
+        <div class="hero-img-container titan-container" onclick="openCharacterLabWithHero('iron_man')" style="cursor:pointer;" title="Click to open Character Laboratory with Iron Man">
+          <img src="assets/ironman_thanos_hd.png" alt="Thanos and Iron Man Confrontation on Titan" class="hero-main-img titan-img"/>
+          <div class="hero-vignette-overlay titan-vignette"></div>
+          <div class="titan-dust-glow"></div>
+
+          <!-- Scene Stamp -->
+          <div class="hero-scene-stamp">
+            <span class="stamp-badge">AVENGERS: INFINITY WAR / ENDGAME NEXUS</span>
+            <span class="stamp-text">THE BATTLE OF TITAN · IRON MAN MARK L vs THANOS</span>
+          </div>
+        </div>
+
+        <!-- CINEMATIC BRIEFING & ACTIONS -->
+        <div class="hero-briefing-card titan-card">
+          <div class="hero-meta-strip">
+            <span class="hero-pill-red">⚔️ TITAN SHOWDOWN</span>
+            <span class="hero-pill-gold">⚛️ 3D MODEL ACTIVE</span>
+            <span class="hero-pill-cyan">🌌 14,000,605 TIMELINES</span>
+            <span class="hero-pill-green">👑 WHERE YOU ARE THE BOSS</span>
+          </div>
+
+          <h1 class="hero-title">“YOU HAVE MY RESPECT, STARK.”</h1>
+          
+          <div class="hero-quote-box">
+            <span class="quote-text">“When I'm done, half of humanity will still be alive. I hope they remember you.”</span>
+            <span class="quote-author">— Thanos facing Tony Stark on Titan</span>
+          </div>
+
+          <p class="hero-description">
+            On the shattered, crimson dunes of Titan, Tony Stark stood toe-to-toe with the Mad Titan in a desperate battle for the cosmos. 
+            Here in the <strong>Marvel Cinematic Universe</strong> — <em>where you are the boss</em> — you dictate what happens next: 
+            customize Stark's nanotech armor in the 3D Transformation Lab, run the real-time simulation, and rewrite history across infinite branches.
+          </p>
+
+          <!-- DEDICATED HERO WIDGET: DIRECT TO CHARACTER LAB -->
+          <div class="hero-ironman-widget" onclick="openCharacterLabWithHero('iron_man')" title="Click to view Iron Man in Character Laboratory">
+            <div class="widget-avatar-wrap">
+              <img src="assets/ironman.png" class="widget-avatar-img" alt="Iron Man"/>
+            </div>
+            <div class="widget-info">
+              <div class="widget-tag">ACTIVE HERO WIDGET · MARK LXXXV</div>
+              <div class="widget-name">IRON MAN (TONY STARK)</div>
+              <div class="widget-hint">CLICK TO OPEN CHARACTER LABORATORY →</div>
+            </div>
+            <button class="btn-widget-open">Open Character Lab 👥</button>
+          </div>
+
+          <div class="hero-actions-group">
+            <button class="btn-hero-primary" onclick="openCharacterLabWithHero('iron_man')">
+              👥 Open Character Lab (Iron Man)
+            </button>
+            <button class="btn-hero-secondary" onclick="enterBattleworldWithHero('iron_man')">
+              🌌 Enter Battleworld (Secret Wars)
+            </button>
+            <button class="btn-hero-danger" onclick="startTitanShowdownSim()">
+              ⚔️ Run Titan Clash (Iron Man vs Thanos)
+            </button>
+            <button class="btn-hero-secondary" onclick="switchTab('timeline')">
+              🌌 Explore Alternate Timelines
+            </button>
+          </div>
+
+          <!-- Live Suit & Battle Telemetry -->
+          <div class="hero-telemetry-grid">
+            <div class="telemetry-box">
+              <span class="k">COMBATANTS</span>
+              <span class="v">IRON MAN vs THANOS</span>
+            </div>
+            <div class="telemetry-box">
+              <span class="k">BATTLEGROUND</span>
+              <span class="v">TITAN · SECTOR 04</span>
+            </div>
+            <div class="telemetry-box">
+              <span class="k">INFINITY STONES</span>
+              <span class="v" style="color:#ffffff;">POWER · SPACE · REALITY · SOUL</span>
+            </div>
+            <div class="telemetry-box">
+              <span class="k">TIMELINE STATUS</span>
+              <span class="v" style="color:#ffffff;">NEXUS POINT DETECTED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CHARACTER LAB ===== -->
+    <div id="screen-lab" class="screen">
+      <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;color:var(--text-bright);letter-spacing:1px;">Character Laboratory</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:3px;">Select a character to inspect attributes, customize in 3D, or deploy into Battleworld</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="btn-battleworld-portal" onclick="enterBattleworld()" title="Enter Battleworld Multiverse Arena">
+            🌌 ENTER BATTLEWORLD ⚔️
+          </button>
+          <span class="badge badge-cyan">10 MARVEL ROSTER</span>
+          <span class="badge badge-gold">AVENGERS & VILLAINS</span>
+        </div>
+      </div>
+
+      <!-- BATTLEWORLD MULTIVERSE ARENA BANNER -->
+      <div class="battleworld-hero-banner" onclick="enterBattleworld()">
+        <div class="bw-banner-content">
+          <div class="bw-badge-pill">🌌 MULTIVERSE REALM DETECTED</div>
+          <div class="bw-banner-title">ENTER BATTLEWORLD: SECRET WARS MULTIVERSE ARENA</div>
+          <div class="bw-banner-desc">
+            All alternate timelines and realities have converged into God Emperor Doom's patchwork Battleworld. Deploy Tony Stark (Iron Man) or any selected champion into the gladiatorial multiverse arena.
+          </div>
+        </div>
+        <button class="btn-battleworld-main" onclick="event.stopPropagation(); enterBattleworld()">
+          ENTER BATTLEWORLD ⚔️
+        </button>
+      </div>
+
+      <div class="layout" id="char-lab-grid"></div>
+    </div>
+
+    <!-- ===== TRANSFORMATION EDITOR & 3D LAB WORKSHOP ===== -->
+    <div id="screen-editor" class="screen">
+      <div class="lab-environment"></div>
+      <div class="lab-floor-grid"></div>
+      <div class="laser-scan-line"></div>
+
+      <!-- Top Lab Header Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-bottom:1px solid rgba(0,200,255,0.2); background:rgba(4,8,20,0.85); backdrop-filter:blur(10px); position:relative; z-index:15;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:#fff; letter-spacing:2px;">🔬 TRANSFORM LAB WORKSHOP</span>
+          <span class="badge badge-cyan" id="editor-char-badge">SPIDER-MAN (PETER PARKER)</span>
+          <span class="badge badge-gold">Interactive 3D Stage</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-outline" onclick="reset3DView()" style="font-size:11px; padding:6px 14px;">⌖ Reset 3D View</button>
+          <button class="btn btn-outline" onclick="toggleAutoRotate()" id="autorotate-btn" style="font-size:11px; padding:6px 14px;">⟳ Auto-Rotate: ON</button>
+          <button class="btn btn-outline" onclick="switchTab('lab')" style="font-size:11px; padding:6px 14px;">← Change Hero</button>
+          <button class="btn btn-primary" onclick="switchTab('sim')" style="font-size:12px; padding:6px 18px;">▶ Run Simulation</button>
+        </div>
+      </div>
+
+      <!-- Lab Main Workspace Grid -->
+      <div class="lab-workspace-grid">
+
+        <!-- LEFT COLUMN: Armor Plating & Defense Systems -->
+        <div class="lab-col lab-left-col">
+          <!-- TOP LEFT: Armor Layer Slot -->
+          <div class="mod-slot-card panel" id="slot-card-0" onclick="selectModSlot(0)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'titanium_plating')">
+            <div class="slot-header">
+              <div>
+                <span class="slot-icon">🛡️</span>
+                <span class="slot-title">ARMOR LAYER</span>
+              </div>
+              <span class="slot-badge badge badge-green" id="slot-status-0">EQUIPPED</span>
+            </div>
+            <div class="slot-name" id="slot-name-0">Titanium Composite Plating</div>
+            <div class="slot-sub" id="slot-sub-0">+180 Durability · +95 Defense</div>
+            <div class="slot-drag-hint">⇄ Drag & Drop Accessory Here</div>
+          </div>
+
+          <!-- BOTTOM LEFT: Defense System Slot -->
+          <div class="mod-slot-card panel" id="slot-card-3" onclick="selectModSlot(3)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'energy_shield')">
+            <div class="slot-header">
+              <div>
+                <span class="slot-icon">🔮</span>
+                <span class="slot-title">DEFENSE SYSTEM</span>
+              </div>
+              <span class="slot-badge badge badge-dim" id="slot-status-3">EMPTY</span>
+            </div>
+            <div class="slot-name" id="slot-name-3">+ Install Shielding</div>
+            <div class="slot-sub" id="slot-sub-3">Absorbs 300 damage</div>
+            <div class="slot-drag-hint">⇄ Drag & Drop Accessory Here</div>
+          </div>
+
+          <!-- Hero Base Stats Monitor -->
+          <div class="panel" style="margin-top: auto; padding:12px;">
+            <div class="panel-header" style="margin-bottom:8px;"><span class="dot"></span>Base Attributes</div>
+            <div id="stat-bars"></div>
+          </div>
+        </div>
+
+        <!-- CENTER COLUMN: 3D Rotatable Character Pedestal -->
+        <div class="lab-center-stage" id="lab-3d-stage" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          
+          <!-- Top Slot Overlay: Power Source / Arc Reactor -->
+          <div class="mod-slot-card panel top-slot-overlay" id="slot-card-2" onclick="selectModSlot(2)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'arc_reactor')">
+            <div class="slot-header">
+              <div>
+                <span class="slot-icon">⚡</span>
+                <span class="slot-title">POWER SOURCE</span>
+              </div>
+              <span class="slot-badge badge badge-dim" id="slot-status-2">EMPTY</span>
+            </div>
+            <div class="slot-name" id="slot-name-2">+ Install Power Source</div>
+            <div class="slot-sub" id="slot-sub-2">+200 Energy Regeneration</div>
+          </div>
+
+          <!-- Holographic 3D Platform Pedestal -->
+          <div class="lab-pedestal-ring"></div>
+
+          <!-- 3D Rotatable Interactive Model Wrapper with Canvas -->
+          <div class="char-3d-model-wrapper" id="char-3d-model">
+            <canvas id="three-canvas" style="width:340px; height:440px; display:block; border-radius:16px; box-shadow:0 0 35px rgba(0,200,255,0.4); border:1px solid rgba(0,200,255,0.5); cursor:grab;" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleCanvasDrop(event)"></canvas>
+            <div class="model-scanline"></div>
+            <div class="model-tech-hud">
+              <span class="badge badge-cyan" id="hud-component-tag">3D INTERACTIVE BODY MESH</span>
+              <span style="font-size:9px; color:var(--cyan);">Click/Drag Body Parts to Equip</span>
+            </div>
+          </div>
+
+          <!-- 3D Rotation Controls -->
+          <div class="rotation-bar-hud">
+            <button class="rot-btn" onclick="rotate3D(-45)">↺ -45°</button>
+            <span class="rot-hint">🖱️ Click & Drag across hero to rotate</span>
+            <button class="rot-btn" onclick="rotate3D(45)">+45° ↻</button>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Weapon Systems & Tactical AI -->
+        <div class="lab-col lab-right-col">
+          <!-- TOP RIGHT: Weapon System Slot -->
+          <div class="mod-slot-card panel" id="slot-card-1" onclick="selectModSlot(1)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'plasma_cannon')">
+            <div class="slot-header">
+              <div>
+                <span class="slot-icon">⚔️</span>
+                <span class="slot-title">WEAPON SYSTEM</span>
+              </div>
+              <span class="slot-badge badge badge-dim" id="slot-status-1">EMPTY</span>
+            </div>
+            <div class="slot-name" id="slot-name-1">+ Install Weapon</div>
+            <div class="slot-sub" id="slot-sub-1">+140 Attack Rating</div>
+            <div class="slot-drag-hint">⇄ Drag & Drop Accessory Here</div>
+          </div>
+
+          <!-- BOTTOM RIGHT: AI System Slot -->
+          <div class="mod-slot-card panel" id="slot-card-5" onclick="selectModSlot(5)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'tactical_ai')">
+            <div class="slot-header">
+              <div>
+                <span class="slot-icon">🧠</span>
+                <span class="slot-title">AI SYSTEM</span>
+              </div>
+              <span class="slot-badge badge badge-dim" id="slot-status-5">EMPTY</span>
+            </div>
+            <div class="slot-name" id="slot-name-5">+ Install Tactical AI</div>
+            <div class="slot-sub" id="slot-sub-5">+80 Tactical Capability</div>
+            <div class="slot-drag-hint">⇄ Drag & Drop Accessory Here</div>
+          </div>
+
+          <!-- Slot Inspector -->
+          <div class="mod-details panel" id="mod-details-panel" style="margin-top: auto;">
+            <div class="panel-header"><span class="dot"></span>Slot Inspector</div>
+            <div id="mod-detail-content">
+              <div style="padding:20px 10px;text-align:center;color:var(--text-dim)">
+                <div style="font-size:28px;margin-bottom:6px">🔩</div>
+                <div style="font-size:12px;">Select or Drag a modification into a slot</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /lab-workspace-grid -->
+
+      <!-- BOTTOM BAR: Drag and Drop Accessory Inventory Rack & Effective Stats -->
+      <div class="lab-inventory-bar">
+        <div class="inventory-label">
+          <span>📦 ACCESSORY RACK</span>
+          <span style="font-size:10px; color:var(--cyan); font-weight:normal;">(Drag any item onto the 3D hero or slot to equip)</span>
+        </div>
+        <div class="inventory-rack" id="inventory-rack">
+          <!-- Populated dynamically with draggable mod cards -->
+        </div>
+
+        <div class="effective-mini-preview">
+          <span class="badge badge-green" id="mod-count-badge">1 Mod Active</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== SIMULATION CHAMBER ===== -->
+    <div id="screen-sim" class="screen">
+      <div class="layout">
+
+        <!-- Left: Config -->
+        <div class="sim-config panel">
+          <div class="panel-header"><span class="dot"></span>Combat Configuration</div>
+
+          <div class="config-field">
+            <div class="config-label">Attackers</div>
+            <div class="combatant-card" style="border-color:rgba(0,200,255,0.4)">
+              <div class="combatant-avatar" id="sim-attacker-avatar" style="background:rgba(0,50,120,0.4);border:1px solid rgba(0,200,255,0.3)">🦾</div>
+              <div class="combatant-info">
+                <div class="combatant-name" id="sim-attacker-name">Iron Man (Mark LXXXV)</div>
+                <div class="combatant-sub" id="sim-attacker-sub">Armored · Nanotech · Genius</div>
+              </div>
+            </div>
+            <div class="vs-divider" style="margin:8px 0">VS</div>
+            <div class="config-label">Defenders</div>
+            <div class="combatant-card" style="border-color:rgba(255,68,85,0.4)">
+              <div class="combatant-avatar" style="background:rgba(80,0,40,0.4);border:1px solid rgba(255,68,85,0.3)">💎</div>
+              <div class="combatant-info">
+                <div class="combatant-name">Thanos (The Mad Titan)</div>
+                <div class="combatant-sub">Titan · Infinity Gauntlet · Cosmic</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="config-field">
+            <div class="config-label">Environment</div>
+            <select class="config-select">
+              <option>Urban Ruins — Night</option>
+              <option>Arctic Wasteland</option>
+              <option>Space Station</option>
+              <option>Volcanic Crater</option>
+            </select>
+            <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">
+              <span class="badge badge-orange" style="font-size:9px">NO FLIGHT</span>
+              <span class="badge badge-orange" style="font-size:9px">LOW VISIBILITY</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="config-field">
+            <div class="config-label">Simulation Seed</div>
+            <div class="seed-input-row">
+              <input class="seed-input" id="seed-input" value="#7F3A9C2D" />
+              <button class="seed-btn" onclick="randomSeed()" title="Randomize">🎲</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="config-field">
+            <div class="config-label" style="margin-bottom:0">Deterministic Mode</div>
+            <div class="toggle-row" style="margin-top:8px">
+              <span style="font-size:12px;color:var(--text-dim)">Same seed → same result</span>
+              <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div style="padding:12px 14px;">
+            <button class="btn btn-primary btn-large" id="sim-btn" onclick="startSim()">▶ Initialize Simulation</button>
+          </div>
+        </div>
+
+        <!-- Center: Arena -->
+        <div class="sim-arena">
+          <div class="arena-bg"></div>
+          <div class="arena-floor"></div>
+          <div class="arena-content">
+            <div class="fighter">
+              <div class="fighter-name-hud" id="arena-hero-name" style="color:var(--cyan)">Iron Man</div>
+              <div class="health-hud">
+                <div class="health-track">
+                  <div class="health-fill cyan-fill" id="hp-aegis" style="width:100%"></div>
+                </div>
+                <div class="health-text"><span id="hp-aegis-txt">780 / 780</span><span style="color:var(--cyan)">HP</span></div>
+              </div>
+              <div class="fighter-sprite" id="arena-hero-icon">🦾</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">
+                <span class="badge badge-cyan" style="font-size:9px">⛨ ARC SHIELD ACTIVE</span>
+              </div>
+            </div>
+
+            <div style="text-align:center">
+              <div class="vs-arena">VS</div>
+              <div id="hit-flash" style="font-size:22px;height:32px;display:flex;align-items:center;justify-content:center;"></div>
+              <div class="sim-status" style="justify-content:center;margin-top:8px">
+                <div class="dot-anim" id="sim-dot" style="background:var(--text-dim)"></div>
+                <span id="sim-status-text">Ready to simulate</span>
+              </div>
+            </div>
+
+            <div class="fighter">
+              <div class="fighter-name-hud" style="color:var(--red)">Thanos</div>
+              <div class="health-hud">
+                <div class="health-track">
+                  <div class="health-fill red-fill" id="hp-corr" style="width:100%"></div>
+                </div>
+                <div class="health-text"><span id="hp-corr-txt">960 / 960</span><span style="color:var(--red)">HP</span></div>
+              </div>
+              <div class="fighter-sprite enemy">💎</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">
+                <span class="badge badge-purple" style="font-size:9px">⚡ INFINITY GAUNTLET</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="arena-hud">
+            <span class="round-badge">Round <span id="round-num">0</span> / 20</span>
+            <div style="display:flex;gap:4px;" id="round-dots"></div>
+          </div>
+
+          <div class="win-bar-wrap">
+            <div class="win-labels">
+              <span style="color:var(--cyan)"><span id="arena-hero-win-name">Iron Man</span> <span id="win-pct">50</span>%</span>
+              <span>Win Probability</span>
+              <span style="color:var(--red)"><span id="lose-pct">50</span>% Thanos</span>
+            </div>
+            <div class="win-bar-track">
+              <div class="win-bar-fill" id="win-bar" style="width:50%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Log -->
+        <div class="sim-log panel">
+          <div class="panel-header"><span class="dot"></span>Combat Log — Live</div>
+          <div id="log-entries" style="max-height:calc(100vh - 340px);overflow-y:auto;"></div>
+          <div class="utility-section">
+            <div class="utility-label">Decision Trace — Last Action</div>
+            <div id="utility-bars"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== TIMELINE EXPLORER ===== -->
+    <div id="screen-timeline" class="screen">
+      <div class="layout">
+        <div class="timeline-graph-panel panel">
+          <div class="panel-header"><span class="dot"></span>Branching Timeline Graph — <span class="text-mono" style="font-size:10px;color:var(--text-dim)">Seed #7F3A9C2D</span></div>
+          <div class="timeline-svg-wrap">
+            <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+        </div>
+
+        <div class="timeline-detail panel">
+          <div class="panel-header"><span class="dot"></span>Selected Node</div>
+          <div id="timeline-detail-content" style="padding:16px;">
+            <div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px 0">Click a timeline node to inspect it</div>
+          </div>
+        </div>
+
+        <div class="narrative-panel panel">
+          <div class="panel-header"><span class="dot"></span>Narrative Summary <span class="badge badge-purple" style="margin-left:8px;font-size:9px">AI-Generated</span></div>
+          <div style="padding:16px;">
+            <p id="narrative-text" style="font-size:13px;color:var(--text);line-height:1.7;font-style:italic;"></p>
+            <button class="btn btn-outline" style="margin-top:12px;font-size:11px;" id="regen-btn" onclick="regenNarrative()">✦ Regenerate Narrative</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CODEX ===== -->
+    <div id="screen-codex" class="screen">
+      <div class="layout">
+        <div class="codex-nav panel" id="codex-nav-container">
+          <div class="panel-header"><span class="dot"></span>Marvel Characters</div>
+          <div id="codex-nav-list"></div>
+        </div>
+        <div class="codex-detail panel">
+          <div class="codex-header" id="codex-header"></div>
+          <div class="codex-body" id="codex-body"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// MARVEL AVENGERS DATA
+// ============================================================
+let selectedCharIndex = 0;
+
+const CHARS = [
+  {
+    id: 'iron_man', name: 'Iron Man (Tony Stark)', icon: '🦾', img: 'assets/ironman.png',
+    loadImg: 'assets/load_arc_reactor.png', loadIcon: '⚛️', loadEmblem: 'ARC REACTOR CORE',
+    gltf: 'assets/iron_man.glb',
+    faction: 'HERO', tags: ['TECH','GENIUS','ARMOR','FLIGHT'],
+    desc: 'Billionaire inventor Tony Stark equipped with the Mark LXXXV nanotech suit powered by a vibranium-infused arc reactor core.',
+    attrs: { Strength:650, Speed:580, Durability:780, Energy:920, Intelligence:990, Defense:750, Attack:820, Mobility:640 },
+    personality: { Aggression:0.4, Loyalty:0.85, Recklessness:0.6, Creativity:0.95, 'Self-Preservation':0.4, Altruism:0.85 },
+    relationships: [
+      {name:'Captain America', affinity:0.7, type:'Ally'},
+      {name:'Thor Odinson', affinity:0.8, type:'Ally'},
+      {name:'Thanos', affinity:-1.0, type:'Enemy'},
+    ],
+    maxEnergy:920, energyCapacity:920, maxWeight:950,
+  },
+  {
+    id: 'captain_america', name: 'Captain America (Steve Rogers)', icon: '🛡️', img: 'assets/captain_america.png',
+    loadImg: 'assets/load_shield.png', loadIcon: '🛡️', loadEmblem: 'VIBRANIUM SHIELD',
+    gltf: 'assets/captain_america.glb',
+    faction: 'HERO', tags: ['SUPER SOLDIER','TACTICIAN','VIBRANIUM'],
+    desc: 'Enhanced super soldier wielding an indestructible Vibranium shield. Master strategist with unmatched tactical leadership.',
+    attrs: { Strength:550, Speed:420, Durability:680, Energy:350, Intelligence:650, Defense:890, Attack:580, Mobility:450 },
+    personality: { Aggression:0.3, Loyalty:1.0, Recklessness:0.2, Creativity:0.5, 'Self-Preservation':0.2, Altruism:1.0 },
+    relationships: [
+      {name:'Iron Man', affinity:0.7, type:'Ally'},
+      {name:'Black Widow', affinity:0.9, type:'Ally'},
+      {name:'Thanos', affinity:-0.95, type:'Enemy'},
+    ],
+    maxEnergy:350, energyCapacity:350, maxWeight:400,
+  },
+  {
+    id: 'thor', name: 'Thor Odinson', icon: '⚡', img: 'assets/thor.png',
+    loadImg: 'assets/load_mjolnir.png', loadIcon: '🔨⚡', loadEmblem: 'MJOLNIR HAMMER',
+    gltf: 'assets/thors_hammer.glb',
+    faction: 'HERO', tags: ['ASGARDIAN','GOD OF THUNDER','COSMIC'],
+    desc: 'Asgardian God of Thunder wielding Stormbreaker and Mjolnir. Channels devastating lightning storms and immense cosmic god-strength.',
+    attrs: { Strength:920, Speed:620, Durability:900, Energy:880, Intelligence:450, Defense:720, Attack:950, Mobility:680 },
+    personality: { Aggression:0.75, Loyalty:0.9, Recklessness:0.7, Creativity:0.4, 'Self-Preservation':0.3, Altruism:0.8 },
+    relationships: [
+      {name:'The Incredible Hulk', affinity:0.85, type:'Ally'},
+      {name:'Iron Man', affinity:0.8, type:'Ally'},
+      {name:'Thanos', affinity:-1.0, type:'Enemy'},
+    ],
+    maxEnergy:880, energyCapacity:880, maxWeight:750,
+  },
+  {
+    id: 'hulk', name: 'The Incredible Hulk', icon: '🟢', img: 'assets/hulk.png',
+    loadImg: 'assets/load_hulk.png', loadIcon: '🤛🟢', loadEmblem: 'GAMMA FIST EMBLEM',
+    gltf: 'assets/hulk.glb',
+    faction: 'HERO', tags: ['GAMMA','BRUTE','INFINITE STRENGTH'],
+    desc: 'Gamma-irradiated powerhouse whose physical strength, endurance, and durability grow infinitely with his level of rage.',
+    attrs: { Strength:990, Speed:380, Durability:980, Energy:350, Intelligence:300, Defense:850, Attack:960, Mobility:350 },
+    personality: { Aggression:0.95, Loyalty:0.7, Recklessness:0.85, Creativity:0.2, 'Self-Preservation':0.5, Altruism:0.6 },
+    relationships: [
+      {name:'Thor Odinson', affinity:0.85, type:'Ally'},
+      {name:'Iron Man', affinity:0.8, type:'Ally'},
+    ],
+    maxEnergy:350, energyCapacity:350, maxWeight:600,
+  },
+  {
+    id: 'thanos', name: 'Thanos (The Mad Titan)', icon: '💎', img: 'assets/thanos.png',
+    loadImg: 'assets/load_infinity_gauntlet.png', loadIcon: '🥊💎', loadEmblem: 'INFINITY GAUNTLET',
+    faction: 'VILLAIN', tags: ['TITAN','INFINITY GAUNTLET','COSMIC'],
+    desc: 'Warlord from Titan wielding the Infinity Gauntlet, seeking to reshape cosmic reality through immense power and cold calculation.',
+    attrs: { Strength:980, Speed:480, Durability:960, Energy:990, Intelligence:920, Defense:880, Attack:970, Mobility:420 },
+    personality: { Aggression:0.8, Loyalty:0.1, Recklessness:0.4, Creativity:0.85, 'Self-Preservation':0.6, Altruism:0.0 },
+    relationships: [
+      {name:'Iron Man', affinity:-1.0, type:'Enemy'},
+      {name:'Thor Odinson', affinity:-1.0, type:'Enemy'},
+      {name:'Captain America', affinity:-0.95, type:'Enemy'},
+    ],
+    maxEnergy:990, energyCapacity:990, maxWeight:800,
+  },
+  {
+    id: 'black_widow', name: 'Black Widow (Natasha Romanoff)', icon: '🕷️', img: 'assets/black_widow.png',
+    loadImg: 'assets/load_black_widow.png', loadIcon: '🔫⌛', loadEmblem: 'BLACK WIDOW STING LOGO',
+    faction: 'HERO', tags: ['ASSASSIN','STEALTH','TACTICIAN'],
+    desc: 'Master spy and martial artist equipped with electro-shock Widow Bites and high-tech stealth apparatus.',
+    attrs: { Strength:320, Speed:780, Durability:340, Energy:280, Intelligence:820, Defense:450, Attack:640, Mobility:820 },
+    personality: { Aggression:0.5, Loyalty:0.9, Recklessness:0.3, Creativity:0.8, 'Self-Preservation':0.6, Altruism:0.75 },
+    relationships: [
+      {name:'Captain America', affinity:0.9, type:'Ally'},
+      {name:'Iron Man', affinity:0.8, type:'Ally'},
+      {name:'Hawkeye', affinity:1.0, type:'Partner'},
+    ],
+    maxEnergy:280, energyCapacity:280, maxWeight:300,
+  },
+  {
+    id: 'doctor_strange', name: 'Doctor Strange (Stephen Strange)', icon: '🔮', img: 'assets/doctor_strange.png',
+    loadImg: 'assets/load_eye_of_agamotto.png', loadIcon: '👁️🔮', loadEmblem: 'EYE OF AGAMOTTO',
+    gltf: 'assets/doctor_strange.glb',
+    faction: 'HERO', tags: ['MYSTIC','SORCERER SUPREME','TIME'],
+    desc: 'Sorcerer Supreme manipulating reality, time loops, and eldritch energy through the Eye of Agamotto and sacred Tao Mandalas.',
+    attrs: { Strength:280, Speed:490, Durability:420, Energy:970, Intelligence:960, Defense:780, Attack:860, Mobility:620 },
+    personality: { Aggression:0.3, Loyalty:0.85, Recklessness:0.4, Creativity:0.95, 'Self-Preservation':0.5, Altruism:0.9 },
+    relationships: [
+      {name:'Iron Man', affinity:0.75, type:'Ally'},
+      {name:'Thanos', affinity:-0.95, type:'Enemy'},
+    ],
+    maxEnergy:970, energyCapacity:970, maxWeight:450,
+  },
+  {
+    id: 'spider_man', name: 'Spider-Man (Peter Parker)', icon: '🕸️', img: 'assets/spider_man.png',
+    loadImg: 'assets/load_spider.png', loadIcon: '🕷️', loadEmblem: 'SPIDER-EMBLEM & WEBS',
+    gltf: 'assets/spider_man.glb',
+    faction: 'HERO', tags: ['ACROBAT','SPIDER-SENSE','WEB-SLINGER'],
+    desc: 'Genius teenager bitten by a radioactive spider, wielding web-shooters, wall-crawling agility, and pre-cognitive Spider-Sense.',
+    attrs: { Strength:620, Speed:840, Durability:520, Energy:320, Intelligence:880, Defense:610, Attack:690, Mobility:940 },
+    personality: { Aggression:0.2, Loyalty:0.95, Recklessness:0.5, Creativity:0.9, 'Self-Preservation':0.4, Altruism:0.95 },
+    relationships: [
+      {name:'Iron Man', affinity:0.95, type:'Mentor/Ally'},
+      {name:'Captain America', affinity:0.8, type:'Ally'},
+    ],
+    maxEnergy:320, energyCapacity:320, maxWeight:350,
+  },
+  {
+    id: 'deadpool', name: 'Deadpool (Wade Wilson)', icon: '⚔️', img: 'assets/captain_america.png',
+    loadImg: 'assets/load_shield.png', loadIcon: '⚔️', loadEmblem: 'DEADPOOL EMBLEM',
+    gltf: 'assets/deadpool.glb',
+    faction: 'ANTI-HERO', tags: ['MUTANT','HEALING FACTOR','SWORDSMAN','UNPREDICTABLE'],
+    desc: 'Merc with a Mouth possessing an accelerated regenerative healing factor, twin katanas, and fourth-wall-breaking combat versatility.',
+    attrs: { Strength:580, Speed:760, Durability:940, Energy:450, Intelligence:680, Defense:620, Attack:860, Mobility:820 },
+    personality: { Aggression:0.8, Loyalty:0.7, Recklessness:0.95, Creativity:0.98, 'Self-Preservation':0.2, Altruism:0.65 },
+    relationships: [
+      {name:'Spider-Man', affinity:0.9, type:'BFF/Ally'},
+      {name:'Thanos', affinity:-0.9, type:'Rival'},
+    ],
+    maxEnergy:450, energyCapacity:450, maxWeight:400,
+  },
+  {
+    id: 'black_panther', name: 'Black Panther (T\'Challa)', icon: '🐾', img: 'assets/vision.png',
+    loadImg: 'assets/load_shield.png', loadIcon: '🐾', loadEmblem: 'VIBRANIUM HABIT',
+    gltf: 'assets/black_panther_helmet.glb',
+    faction: 'HERO', tags: ['VIBRANIUM SUIT','KING OF WAKANDA','KINETIC ABSORPTION'],
+    desc: 'King of Wakanda wearing a Panther Habit woven with Vibranium mesh capable of absorbing, storing, and redistributing kinetic impact energy.',
+    attrs: { Strength:720, Speed:880, Durability:890, Energy:650, Intelligence:910, Defense:920, Attack:830, Mobility:920 },
+    personality: { Aggression:0.35, Loyalty:0.95, Recklessness:0.25, Creativity:0.8, 'Self-Preservation':0.4, Altruism:0.9 },
+    relationships: [
+      {name:'Captain America', affinity:0.85, type:'Ally'},
+      {name:'Iron Man', affinity:0.8, type:'Ally'},
+      {name:'Thanos', affinity:-1.0, type:'Enemy'},
+    ],
+    maxEnergy:650, energyCapacity:650, maxWeight:500,
+  },
+  {
+    id: 'hawkeye', name: 'Hawkeye (Clint Barton)', icon: '🏹', img: 'assets/hawkeye.png',
+    loadImg: 'assets/load_hawkeye.png', loadIcon: '🏹🎯', loadEmblem: 'ARCHERY CROSSHAIR LOGO',
+    faction: 'HERO', tags: ['MARKSMAN','SHIELD AGENT','TACTICIAN'],
+    desc: 'Master marksman and SHIELD agent with 100% archery precision, trick arrows, and tactical battlefield awareness.',
+    attrs: { Strength:380, Speed:690, Durability:380, Energy:250, Intelligence:720, Defense:480, Attack:790, Mobility:720 },
+    personality: { Aggression:0.4, Loyalty:0.95, Recklessness:0.3, Creativity:0.75, 'Self-Preservation':0.5, Altruism:0.85 },
+    relationships: [
+      {name:'Black Widow', affinity:1.0, type:'Partner'},
+      {name:'Captain America', affinity:0.85, type:'Ally'},
+    ],
+    maxEnergy:250, energyCapacity:250, maxWeight:300,
+  },
+  {
+    id: 'vision', name: 'Vision (Mind Stone Synthezoid)', icon: '🟡', img: 'assets/vision.png',
+    loadImg: 'assets/load_vision.png', loadIcon: '🟡', loadEmblem: 'MIND STONE CREST',
+    faction: 'HERO', tags: ['SYNTHEZOID','MIND STONE','DENSITY CONTROL'],
+    desc: 'Vibranium-bodied synthezoid powered by the Mind Stone, capable of solar energy blasts and phase-density manipulation.',
+    attrs: { Strength:820, Speed:750, Durability:920, Energy:980, Intelligence:950, Defense:890, Attack:840, Mobility:820 },
+    personality: { Aggression:0.1, Loyalty:0.95, Recklessness:0.05, Creativity:0.7, 'Self-Preservation':0.3, Altruism:0.95 },
+    relationships: [
+      {name:'Wanda Maximoff', affinity:1.0, type:'Ally/Lover'},
+      {name:'Iron Man', affinity:0.85, type:'Creator/Ally'},
+    ],
+    maxEnergy:980, energyCapacity:980, maxWeight:850,
+  }
+];
+
+const MODS = [
+  {
+    slot:'ARMOR LAYER', icon:'🛡', id:'titanium_plating', name:'Titanium Composite Plating', equipped:true,
+    advantages:['+180 Durability','+95 Defense Rating','Reduces kinetic damage by 40%'],
+    disadvantages:['-35 Speed','-20 Mobility Rating','+120 kg weight'],
+    energyCost:'8 / sec', weight:'120 kg', compatible:true,
+    attrDelta:{Durability:+180, Defense:+95, Speed:-35, Mobility:-20}
+  },
+  {
+    slot:'WEAPON SYSTEM', icon:'⚔', id:'plasma_cannon', name:'Plasma Burst Cannon', equipped:false,
+    advantages:['+140 Attack Rating','+60 Range','Armor-piercing rounds'],
+    disadvantages:['-15 Accuracy at close range','+90 kg weight','High energy cost'],
+    energyCost:'22 / sec', weight:'90 kg', compatible:true,
+    attrDelta:{Attack:+140, Accuracy:-15}
+  },
+  {
+    slot:'POWER SOURCE', icon:'⚡', id:'arc_reactor', name:'Compact Arc Reactor', equipped:false,
+    advantages:['+200 Max Energy','Regenerates 15 energy/sec','Reduces all energy costs by 20%'],
+    disadvantages:['Incompatible with Mystic mods','+45 kg weight'],
+    energyCost:'0 / sec', weight:'45 kg', compatible:true,
+    attrDelta:{Energy:+200, MaxEnergy:+200}
+  },
+  {
+    slot:'DEFENSE SYSTEM', icon:'🔮', id:'energy_shield', name:'Quantum Energy Shield', equipped:false,
+    advantages:['+120 Defense Rating','Absorbs first 300 damage per encounter','Reflects 10% of absorbed damage'],
+    disadvantages:['-25 Speed while active','+80 kg weight','15 sec cooldown after depletion'],
+    energyCost:'18 / sec', weight:'80 kg', compatible:true,
+    attrDelta:{Defense:+120, Speed:-25}
+  },
+  {
+    slot:'MOBILITY SYSTEM', icon:'🚀', id:'thrust_pods', name:'Micro Thrust Pods', equipped:false,
+    advantages:['+90 Speed','+110 Mobility Rating','Enables short-burst flight'],
+    disadvantages:['+60 kg weight','Reduced efficiency underwater'],
+    energyCost:'12 / sec', weight:'60 kg', compatible:true,
+    attrDelta:{Speed:+90, Mobility:+110}
+  },
+  {
+    slot:'AI SYSTEM', icon:'🧠', id:'tactical_ai', name:'Tactical Combat AI v3', equipped:false,
+    advantages:['+80 Tactical Capability','+40 Reaction Time','Threat prioritization'],
+    disadvantages:['Reduced creative improvisation','Requires 5 sec boot time'],
+    energyCost:'5 / sec', weight:'12 kg', compatible:true,
+    attrDelta:{TacticalCapability:+80, ReactionTime:-0.15}
+  },
+  {
+    slot:'SPECIAL ABILITY', icon:'⭐', id:'bio_overcharge', name:'Biological Overcharge', equipped:false,
+    advantages:['Doubles Strength for 10 sec','Full energy recovery on activation'],
+    disadvantages:['INCOMPATIBLE — Requires Biological trait','High risk of system damage'],
+    energyCost:'50 burst', weight:'0 kg', compatible:false,
+    attrDelta:{}
+  },
+  {
+    slot:'DEFENSE SYSTEM', icon:'🛡️', id:'vibranium_shield', name:'Captain\'s Vibranium Shield (3D GLB)', equipped:false,
+    gltf:'assets/captain_america_shield.glb',
+    advantages:['+220 Defense Rating','+150 Durability','Kinetic absorption & ricochet deflection','3D Vibranium Mesh'],
+    disadvantages:['-20 Speed','+45 kg weight'],
+    energyCost:'0 / sec', weight:'45 kg', compatible:true,
+    attrDelta:{Defense:+220, Durability:+150, Speed:-20}
+  },
+  {
+    slot:'DEFENSE SYSTEM', icon:'✨', id:'eldritch_shield', name:'Mandala of Balthakk (3D GLB)', equipped:false,
+    gltf:'assets/doctor_strange_shield.glb',
+    advantages:['+250 Defense Rating','+180 Energy','Eldritch dimensional projection','3D Mystic Chakra'],
+    disadvantages:['High energy consumption while active'],
+    energyCost:'16 / sec', weight:'0 kg', compatible:true,
+    attrDelta:{Defense:+250, Energy:+180}
+  },
+  {
+    slot:'WEAPON SYSTEM', icon:'🔨', id:'thors_mjolnir', name:'Mjölnir Uru Hammer (3D GLB)', equipped:false,
+    gltf:'assets/thors_hammer.glb',
+    advantages:['+280 Attack Rating','+200 Strength','Channel lightning storms','Worthy enchantment'],
+    disadvantages:['Requires 700+ Strength or Worthy status','+85 kg weight'],
+    energyCost:'10 / sec', weight:'85 kg', compatible:true,
+    attrDelta:{Attack:+280, Strength:+200}
+  },
+  {
+    slot:'ARMOR LAYER', icon:'📿', id:'panther_necklace', name:'Vibranium Panther Habit (3D GLB)', equipped:false,
+    gltf:'assets/black_panther_necklace.glb',
+    advantages:['+190 Durability','+160 Defense Rating','Nanotech suit deployment','Kinetic pulse redistribution'],
+    disadvantages:['Requires Wakandan frequency sync'],
+    energyCost:'5 / sec', weight:'2 kg', compatible:true,
+    attrDelta:{Durability:+190, Defense:+160}
+  }
+];
+
+// Stat colors
+function statColor(pct) {
+  if (pct < 0.25) return '#555555';
+  if (pct < 0.5)  return '#888888';
+  if (pct < 0.75) return '#bbbbbb';
+  return '#ffffff';
+}
+
+// ============================================================
+// TAB NAVIGATION
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById('screen-' + name);
+  if (target) target.classList.add('active');
+  const tabs = {hero:0, lab:1, editor:2, sim:3, timeline:4, codex:5};
+  const tabList = document.querySelectorAll('.nav-tab');
+  if (tabs[name] !== undefined && tabList[tabs[name]]) {
+    tabList[tabs[name]].classList.add('active');
+  }
+  if (name === 'timeline') renderTimeline();
+  if (name === 'codex') renderCodex(0);
+}
+
+// ============================================================
+// MARVEL INTRO SPLASH, THANOS SNAP & AVENGERS THEME CONTROLLER
+// ============================================================
+let isThemePlaying = false;
+let isEnteringUniverse = false;
+let snapAnimationId = null;
+let snapTimeouts = [];
+
+// Synthesize Gauntlet Snap Sound (Metallic Snap + Sub-bass Boom + Decimating Wind)
+function playThanosSnapSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // A. Gauntlet finger snap metallic transient
+    const snapOsc = ctx.createOscillator();
+    const snapGain = ctx.createGain();
+    const snapFilter = ctx.createBiquadFilter();
+    snapFilter.type = 'highpass';
+    snapFilter.frequency.setValueAtTime(1400, now);
+
+    snapOsc.type = 'sawtooth';
+    snapOsc.frequency.setValueAtTime(3200, now);
+    snapOsc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+
+    snapGain.gain.setValueAtTime(1.0, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+    snapOsc.connect(snapFilter);
+    snapFilter.connect(snapGain);
+    snapGain.connect(ctx.destination);
+    snapOsc.start(now);
+    snapOsc.stop(now + 0.1);
+
+    // B. Sub-bass cosmic resonance (the thunderous Infinity Gauntlet impact)
+    const boomOsc = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boomOsc.type = 'sine';
+    boomOsc.frequency.setValueAtTime(110, now);
+    boomOsc.frequency.exponentialRampToValueAtTime(22, now + 1.4);
+
+    boomGain.gain.setValueAtTime(0.9, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+    boomOsc.connect(boomGain);
+    boomGain.connect(ctx.destination);
+    boomOsc.start(now);
+    boomOsc.stop(now + 1.6);
+
+    // C. Decimating ash wind whoosh (air displacement as particles dissolve)
+    const bufferSize = ctx.sampleRate * 2.8;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+
+    const whiteNoise = ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(850, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(180, now + 2.5);
+    noiseFilter.Q.setValueAtTime(2.5, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.7, now + 0.03);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.7);
+
+    whiteNoise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+
+    whiteNoise.start(now);
+    whiteNoise.stop(now + 2.8);
+  } catch (err) {
+    console.warn('Snap audio synth fallback:', err);
+  }
+}
+
+// High-Performance Hardware-Accelerated Screen Shatter & Disintegration
+function triggerScreenShatterDisintegration(onComplete) {
+  const intro = document.getElementById('marvel-intro-screen');
+  const stage = document.getElementById('screen-shatter-stage');
+  if (!intro || !stage) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  // Clear previous shards
+  stage.innerHTML = '';
+
+  const cols = 6;
+  const rows = 6;
+  const shards = [];
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pieceW = Math.ceil(w / cols);
+  const pieceH = Math.ceil(h / rows);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const shard = document.createElement('div');
+      shard.className = 'disintegration-shard';
+      shard.style.left = (c * pieceW) + 'px';
+      shard.style.top = (r * pieceH) + 'px';
+      shard.style.width = (pieceW + 1) + 'px';
+      shard.style.height = (pieceH + 1) + 'px';
+      shard.style.backgroundPosition = `-${c * pieceW}px -${r * pieceH}px`;
+      shard.style.backgroundSize = `${w}px ${h}px`;
+      stage.appendChild(shard);
+
+      const centerX = w * 0.5;
+      const centerY = h * 0.5;
+      const shardCenterX = (c + 0.5) * pieceW;
+      const shardCenterY = (r + 0.5) * pieceH;
+      const dirX = (shardCenterX - centerX) / (w * 0.5);
+      const dirY = (shardCenterY - centerY) / (h * 0.5);
+
+      const scatterDist = Math.random() * 400 + 200;
+      const targetX = dirX * scatterDist + (Math.random() * 150 + 60);
+      const targetY = dirY * scatterDist - (Math.random() * 250 + 100);
+      const targetZ = (Math.random() - 0.5) * 500;
+      const rotX = (Math.random() - 0.5) * 480;
+      const rotY = (Math.random() - 0.5) * 480;
+      const rotZ = (Math.random() - 0.5) * 360;
+      const duration = (Math.random() * 0.4 + 1.2).toFixed(2);
+      const delay = (Math.random() * 0.1).toFixed(3);
+
+      shards.push({
+        element: shard,
+        transform: `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(1)}px, ${targetZ.toFixed(1)}px) rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg) scale(0)`,
+        transition: `transform ${duration}s cubic-bezier(0.16, 0.85, 0.25, 1) ${delay}s, opacity ${duration}s ease-out ${delay}s`
+      });
+    }
+  }
+
+  // Next frame: trigger smooth GPU transitions
+  requestAnimationFrame(() => {
+    intro.style.opacity = '0';
+    intro.style.pointerEvents = 'none';
+
+    for (let i = 0; i < shards.length; i++) {
+      const s = shards[i];
+      s.element.style.transition = s.transition;
+      s.element.style.transform = s.transform;
+      s.element.style.opacity = '0';
+    }
+  });
+
+  // Start smooth lightweight ash stream (<0.1ms per frame)
+  startSmoothAshCanvas();
+
+  snapTimeouts.push(setTimeout(() => {
+    stage.innerHTML = '';
+    if (onComplete) onComplete();
+  }, 1800));
+}
+
+// Lightweight 60 FPS Ash Breeze (Zero context state overhead)
+function startSmoothAshCanvas() {
+  const canvas = document.getElementById('snap-particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const w = (canvas.width = window.innerWidth);
+  const h = (canvas.height = window.innerHeight);
+
+  const particles = [];
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      size: Math.random() * 3 + 1,
+      vx: Math.random() * 4 + 2,
+      vy: -(Math.random() * 3 + 1),
+      alpha: Math.random() * 0.8 + 0.2,
+      decay: Math.random() * 0.015 + 0.008
+    });
+  }
+
+  const startTime = performance.now();
+  function render(now) {
+    if (now - startTime > 2000) {
+      ctx.clearRect(0, 0, w, h);
+      return;
+    }
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#ffffff';
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= p.decay;
+      if (p.alpha <= 0) continue;
+
+      ctx.globalAlpha = p.alpha;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+
+    snapAnimationId = requestAnimationFrame(render);
+  }
+
+  snapAnimationId = requestAnimationFrame(render);
+}
+
+function enterMarvelCinematicUniverse(e) {
+  if (e) e.stopPropagation();
+  if (isEnteringUniverse) return;
+  isEnteringUniverse = true;
+
+  const intro = document.getElementById('marvel-intro-screen');
+  const enterBtn = document.getElementById('marvel-enter-btn');
+  const warpOverlay = document.getElementById('cinematic-warp-overlay');
+  const heroScreen = document.getElementById('screen-hero');
+
+  // 1. Play synthesized gauntlet snap sound immediately
+  playThanosSnapSound();
+
+  // 2. Play official Avengers theme immediately on user interaction
+  const audio = document.getElementById('avengers-audio');
+  if (audio) {
+    audio.play().then(() => {
+      isThemePlaying = true;
+      updateAudioHUDs(true);
+    }).catch(err => {
+      console.warn('Audio playback error:', err);
+    });
+  }
+
+  // 3. Stage 1: Trigger button surge & non-lagging camera shock
+  document.body.classList.add('snap-screen-shake');
+  if (enterBtn) enterBtn.classList.add('clicked');
+
+  // 4. Stage 2 (80ms): Activate overlay and trigger 60fps screen shatter into pieces
+  snapTimeouts.push(setTimeout(() => {
+    if (warpOverlay) warpOverlay.classList.add('active');
+    triggerScreenShatterDisintegration(() => {
+      finishTransition();
+    });
+  }, 80));
+
+  // 5. Stage 3 (1000ms): Staging in Titan Showdown smoothly as pieces disperse
+  snapTimeouts.push(setTimeout(() => {
+    document.body.classList.remove('snap-screen-shake');
+    if (heroScreen) {
+      heroScreen.classList.remove('hero-entrance-active');
+      void heroScreen.offsetWidth;
+      heroScreen.classList.add('hero-entrance-active');
+    }
+  }, 1000));
+
+  // 6. Stage 4 (1800ms): Complete cleanup
+  snapTimeouts.push(setTimeout(() => {
+    finishTransition();
+  }, 1800));
+}
+
+function finishTransition() {
+  const intro = document.getElementById('marvel-intro-screen');
+  const warpOverlay = document.getElementById('cinematic-warp-overlay');
+  const heroScreen = document.getElementById('screen-hero');
+  const stage = document.getElementById('screen-shatter-stage');
+
+  if (intro) {
+    intro.classList.add('dismissed');
+    intro.style.opacity = '';
+    intro.style.pointerEvents = '';
+  }
+  if (stage) stage.innerHTML = '';
+  document.body.classList.remove('snap-screen-shake');
+
+  if (warpOverlay) warpOverlay.classList.remove('active');
+
+  if (heroScreen && !heroScreen.classList.contains('hero-entrance-active')) {
+    heroScreen.classList.add('hero-entrance-active');
+  }
+
+  if (snapAnimationId) {
+    cancelAnimationFrame(snapAnimationId);
+    snapAnimationId = null;
+  }
+  const canvas = document.getElementById('snap-particle-canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  isEnteringUniverse = false;
+}
+
+function skipThanosSnap(e) {
+  if (e) e.stopPropagation();
+  snapTimeouts.forEach(t => clearTimeout(t));
+  snapTimeouts = [];
+  finishTransition();
+}
+
+function showMarvelIntro() {
+  snapTimeouts.forEach(t => clearTimeout(t));
+  snapTimeouts = [];
+
+  const intro = document.getElementById('marvel-intro-screen');
+  const enterBtn = document.getElementById('marvel-enter-btn');
+  const warpOverlay = document.getElementById('cinematic-warp-overlay');
+  const heroScreen = document.getElementById('screen-hero');
+  const stage = document.getElementById('screen-shatter-stage');
+
+  document.body.classList.remove('snap-screen-shake');
+
+  if (intro) {
+    intro.classList.remove('dismissed', 'snap-disintegrating', 'warping');
+    intro.style.opacity = '';
+    intro.style.pointerEvents = '';
+  }
+  if (stage) stage.innerHTML = '';
+  if (enterBtn) enterBtn.classList.remove('clicked');
+  if (warpOverlay) warpOverlay.classList.remove('active');
+  if (heroScreen) heroScreen.classList.remove('hero-entrance-active');
+
+  if (snapAnimationId) {
+    cancelAnimationFrame(snapAnimationId);
+    snapAnimationId = null;
+  }
+  const canvas = document.getElementById('snap-particle-canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  isEnteringUniverse = false;
+}
+
+// Allow ESC key to skip snap animation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isEnteringUniverse) {
+    skipThanosSnap();
+  }
+});
+
+function toggleAvengersTheme() {
+  const audio = document.getElementById('avengers-audio');
+  if (!audio) return;
+
+  if (isThemePlaying) {
+    audio.pause();
+    isThemePlaying = false;
+    updateAudioHUDs(false);
+  } else {
+    audio.play().then(() => {
+      isThemePlaying = true;
+      updateAudioHUDs(true);
+    }).catch(err => {
+      console.warn('Audio playback error:', err);
+    });
+  }
+}
+
+function updateAudioHUDs(playing) {
+  const topHud = document.getElementById('topbar-audio-btn');
+  const topText = document.getElementById('topbar-audio-text');
+  if (topHud) {
+    if (playing) topHud.classList.add('playing');
+    else topHud.classList.remove('playing');
+  }
+  if (topText) {
+    topText.textContent = playing ? 'Avengers Theme (Loop)' : 'Theme Muted';
+  }
+}
+
+function startTitanShowdownSim() {
+  // Ensure Iron Man is active
+  selectCharacter(0, false);
+  // Switch to Simulation Chamber
+  switchTab('sim');
+}
+
+// ============================================================
+// MARVEL AVENGERS: ENDGAME HEROES DATA & SHOWCASE
+// ============================================================
+const ENDGAME_DATA = {
+  iron_man: {
+    role: "Nanotech Armor & Gauntlet Wielder",
+    quote: "“And I... am... Iron Man.”",
+    category: "trinity",
+    badge: "3D MODEL READY"
+  },
+  captain_america: {
+    role: "First Avenger · Wielder of Mjolnir",
+    quote: "“Avengers... Assemble!”",
+    category: "trinity",
+    badge: "3D MODEL & SHIELD"
+  },
+  thor: {
+    role: "God of Thunder · Dual-Wielder",
+    quote: "“Let's kill him properly this time.”",
+    category: "trinity",
+    badge: "3D MJÖLNIR ARSENAL"
+  },
+  hulk: {
+    role: "Smart Hulk · Nano Gauntlet Operator",
+    quote: "“I was made for this. The radiation's mostly gamma.”",
+    category: "tactical",
+    badge: "3D MODEL READY"
+  },
+  spider_man: {
+    role: "Titan Resurgent · Instant Kill Protocol",
+    quote: "“Hey everyone! Holy cow, you will not believe what's been going on!”",
+    category: "mystic",
+    badge: "3D MODEL & ANIMATED"
+  },
+  doctor_strange: {
+    role: "Master of the Mystic Arts · Sling Ring Summoner",
+    quote: "“14,000,605 futures. We're in the endgame now.”",
+    category: "mystic",
+    badge: "3D MODEL & SHIELD"
+  },
+  deadpool: {
+    role: "Merc with a Mouth · Regenerative Combatant",
+    quote: "“Maximum effort. Let's do this multiverse style.”",
+    category: "tactical",
+    badge: "3D MODEL READY"
+  },
+  black_panther: {
+    role: "King of Wakanda · Kinetic Habit Wielder",
+    quote: "“Yibambe! Wakanda Forever!”",
+    category: "tactical",
+    badge: "3D HELMET & HABIT"
+  },
+  black_widow: {
+    role: "Soul Stone Catalyst · Tactical Vanguard",
+    quote: "“Whatever it takes.”",
+    category: "tactical",
+    badge: "SHIELD OPERATIVE"
+  },
+  hawkeye: {
+    role: "Ronin / Master Archer · Gauntlet Courier",
+    quote: "“Don't give me hope.”",
+    category: "tactical",
+    badge: "PRECISION ARCHER"
+  },
+  vision: {
+    role: "Synthezoid · Mind Stone Conduit",
+    quote: "“A thing isn't beautiful because it lasts.”",
+    category: "cosmic",
+    badge: "COSMIC INTELLECT"
+  },
+  thanos: {
+    role: "Warlord of Titan · The Inevitable",
+    quote: "“You could not live with your own failure. Where did that bring you? Back to me.”",
+    category: "cosmic",
+    badge: "THE MAD TITAN"
+  }
+};
+
+let currentEndgameFilter = 'all';
+
+function renderEndgameGrid(filter = currentEndgameFilter) {
+  currentEndgameFilter = filter;
+  const container = document.getElementById('endgame-grid');
+  if (!container) return;
+
+  container.innerHTML = CHARS.map((c, i) => {
+    const meta = ENDGAME_DATA[c.id] || {
+      role: c.faction,
+      quote: c.desc,
+      category: 'all',
+      badge: c.faction
+    };
+
+    if (filter !== 'all' && meta.category !== filter) return '';
+
+    const isVillain = c.faction === 'VILLAIN';
+    const has3D = !!c.gltf;
+
+    return `
+      <div class="endgame-card ${isVillain ? 'villain' : ''}">
+        <div class="endgame-card-portal-glow"></div>
+        <div class="endgame-card-portrait-wrap">
+          <div class="endgame-card-badges">
+            <span class="badge ${isVillain ? 'badge-red' : 'badge-gold'}" style="font-size:9px;">${meta.badge}</span>
+            ${has3D ? `<span class="badge badge-cyan" style="font-size:9px;">⚡ 3D GLB</span>` : ''}
+          </div>
+          <img class="endgame-card-portrait" src="${c.img}" alt="${c.name}"/>
+        </div>
+        <div class="endgame-card-body">
+          <div class="endgame-card-name">${c.name}</div>
+          <div class="endgame-card-role">${meta.role}</div>
+          <div class="endgame-card-quote">${meta.quote}</div>
+          <div class="endgame-card-stats">
+            <div class="mini-stat"><span class="k">STR</span><span class="v">${c.attrs.Strength}</span></div>
+            <div class="mini-stat"><span class="k">SPD</span><span class="v">${c.attrs.Speed}</span></div>
+            <div class="mini-stat"><span class="k">DUR</span><span class="v">${c.attrs.Durability}</span></div>
+            <div class="mini-stat"><span class="k">ATK</span><span class="v">${c.attrs.Attack}</span></div>
+          </div>
+          <div class="endgame-card-actions">
+            <button class="btn-card-primary" onclick="selectHeroAndTransform('${c.id}')">
+              ${has3D ? '🔬 Open in 3D Lab' : '🔬 Select & Transform'}
+            </button>
+            <button class="btn-card-secondary" onclick="selectCharacter(${i}); switchTab('lab');">
+              Codex
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterEndgameHeroes(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderEndgameGrid(cat);
+}
+
+function selectHeroAndTransform(heroId) {
+  const idx = CHARS.findIndex(c => c.id === heroId);
+  if (idx !== -1) {
+    selectCharacter(idx, true);
+  }
+}
+
+function initEndgameEmbers() {
+  const container = document.getElementById('endgame-embers');
+  if (!container || container.children.length > 0) return;
+  for (let i = 0; i < 40; i++) {
+    const ember = document.createElement('div');
+    ember.className = 'endgame-ember';
+    ember.style.left = (Math.random() * 100) + '%';
+    ember.style.animationDuration = (5 + Math.random() * 7) + 's';
+    ember.style.animationDelay = (Math.random() * 6) + 's';
+    const sz = 2 + Math.random() * 4;
+    ember.style.width = sz + 'px';
+    ember.style.height = sz + 'px';
+    container.appendChild(ember);
+  }
+}
+
+// ============================================================
+// CHARACTER SELECTION & RENDERERS
+// ============================================================
+function renderCharacterLab() {
+  const container = document.getElementById('char-lab-grid');
+  if (!container) return;
+  container.innerHTML = CHARS.map((c, i) => {
+    const isSelected = i === selectedCharIndex;
+    const isVillain = c.faction === 'VILLAIN';
+    return `
+      <div class="char-card ${isSelected ? 'selected' : ''}" onclick="selectCharacterInLab(${i})">
+        <div class="char-card-portrait" style="background:#141414; border-bottom:1px solid rgba(255,255,255,0.1); overflow:hidden;">
+          ${c.img 
+            ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;object-position:top;" alt="${c.name}"/>` 
+            : `<span>${c.icon}</span>`}
+          ${isSelected ? `<div style="position:absolute;top:10px;right:10px;z-index:2;"><span class="badge" style="font-size:9px;background:#ffffff;color:#000000;border:1px solid #ffffff;">ACTIVE</span></div>` : ''}
+        </div>
+        <div class="char-card-body">
+          <div class="char-card-name">${c.name}</div>
+          <div class="char-card-desc">${c.desc}</div>
+          <div class="char-card-tags">
+            ${c.tags.map(t=>`<span class="badge" style="font-size:9px">${t}</span>`).join('')}
+            <span class="badge" style="font-size:9px">${c.faction}</span>
+          </div>
+        </div>
+        <div class="char-card-stats">
+          <div class="char-card-stat"><span class="k">Strength</span><span class="v">${c.attrs.Strength}</span></div>
+          <div class="char-card-stat"><span class="k">Durability</span><span class="v">${c.attrs.Durability}</span></div>
+          <div class="char-card-stat"><span class="k">Attack</span><span class="v">${c.attrs.Attack}</span></div>
+          <div class="char-card-stat"><span class="k">Speed</span><span class="v">${c.attrs.Speed}</span></div>
+        </div>
+        <div class="char-card-actions">
+          <button class="btn-card-bw" onclick="event.stopPropagation(); enterBattleworldWithHero('${c.id}')" title="Deploy ${c.name} directly into Battleworld">
+            ⚔️ Battleworld
+          </button>
+          <button class="btn-card-3d" onclick="event.stopPropagation(); selectCharacter(${i}, true)" title="Open ${c.name} in 3D Transformation Lab">
+            🔬 3D Transform
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function selectCharacterInLab(index) {
+  selectedCharIndex = index;
+  applyCharacterSelection(index);
+  renderCharacterLab();
+}
+
+function openCharacterLabWithHero(heroId) {
+  const idx = CHARS.findIndex(c => c.id === heroId);
+  selectCharacterInLab(idx !== -1 ? idx : 0);
+  switchTab('lab');
+}
+
+function enterBattleworldWithHero(heroId) {
+  const idx = CHARS.findIndex(c => c.id === heroId);
+  selectCharacterInLab(idx !== -1 ? idx : 0);
+  enterBattleworld();
+}
+
+function enterBattleworld() {
+  const char = CHARS[selectedCharIndex] || CHARS[0];
+  const envSelect = document.querySelector('.config-select');
+  if (envSelect) {
+    let bwOption = Array.from(envSelect.options).find(o => o.text.includes('Battleworld'));
+    if (!bwOption) {
+      bwOption = new Option('Battleworld — Secret Wars Multiverse Arena', 'Battleworld — Secret Wars Multiverse Arena');
+      envSelect.add(bwOption, 0);
+    }
+    envSelect.value = bwOption.value;
+  }
+  switchTab('sim');
+  setTimeout(() => {
+    const runBtn = document.querySelector('.btn-large.btn-primary') || document.querySelector('.btn-primary');
+    if (runBtn && typeof startSimulation === 'function') {
+      startSimulation();
+    }
+  }, 400);
+}
+
+// ============================================================
+// CHARACTER LOADING OVERLAY LOGIC
+// ============================================================
+function showCharacterLoader(index, onComplete) {
+  const char = CHARS[index];
+  const overlay = document.getElementById('loading-overlay');
+  const iconEl = document.getElementById('loader-icon');
+  const nameEl = document.getElementById('loader-char-name');
+  const emblemEl = document.getElementById('loader-emblem');
+  const pctEl = document.getElementById('loader-pct');
+  const msgEl = document.getElementById('loader-msg');
+  const fillEl = document.getElementById('loader-progress-bar');
+  const ringEl = document.getElementById('loader-ring');
+
+  if (iconEl) {
+    if (char.loadImg) {
+      iconEl.innerHTML = `<img src="${char.loadImg}" alt="${char.name}"/>`;
+    } else {
+      iconEl.textContent = char.loadIcon || char.icon;
+    }
+  }
+  if (nameEl) nameEl.textContent = char.name.split('(')[0].trim();
+  if (emblemEl) emblemEl.textContent = char.loadEmblem || 'QUANTUM CORE';
+
+  overlay.classList.add('active');
+
+  const circumference = 722.5; // 2 * PI * 115
+  let currentPct = 0;
+
+  const steps = [
+    { p: 18, m: "Getting your resources ready..." },
+    { p: 38, m: `Retrieving ${char.name.split(' ')[0]}'s bio-data & attributes...` },
+    { p: 62, m: "Building your WHAT IF model..." },
+    { p: 84, m: "Calibrating Gameplay Ability System (GAS)..." },
+    { p: 100, m: "Finalizing Transformation Engine Matrix... 100%" }
+  ];
+
+  const interval = setInterval(() => {
+    currentPct += 2;
+    if (currentPct > 100) currentPct = 100;
+
+    if (pctEl) pctEl.textContent = currentPct + '%';
+    if (fillEl) fillEl.style.width = currentPct + '%';
+    if (ringEl) {
+      const offset = circumference - (currentPct / 100) * circumference;
+      ringEl.style.strokeDashoffset = offset;
+    }
+
+    // Update message based on step
+    for (let s of steps) {
+      if (currentPct <= s.p) {
+        if (msgEl) msgEl.textContent = s.m;
+        break;
+      }
+    }
+
+    if (currentPct >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        if (onComplete) onComplete();
+      }, 300);
+    }
+  }, 35);
+}
+
+function selectCharacter(index, doSwitchTab = true) {
+  if (doSwitchTab) {
+    showCharacterLoader(index, () => {
+      applyCharacterSelection(index);
+      switchTab('editor');
+    });
+  } else {
+    applyCharacterSelection(index);
+  }
+}
+
+function applyCharacterSelection(index) {
+  selectedCharIndex = index;
+  const char = CHARS[selectedCharIndex];
+
+  // Update Transformation Editor 3D Model & Header Badge
+  const badgeEl = document.getElementById('editor-char-badge');
+  if (badgeEl) badgeEl.textContent = char.name.toUpperCase();
+
+  // Rebuild Real Three.js 3D Mesh
+  if (typeof buildHero3DMesh === 'function') {
+    buildHero3DMesh(char.id);
+  }
+
+  // Update Simulation Chamber Attacker
+  const simAvatar = document.getElementById('sim-attacker-avatar');
+  if (simAvatar) {
+    if (char.img) simAvatar.innerHTML = `<img src="${char.img}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"/>`;
+    else simAvatar.textContent = char.icon;
+  }
+  const simName = document.getElementById('sim-attacker-name');
+  if (simName) simName.textContent = char.name;
+  const simSub = document.getElementById('sim-attacker-sub');
+  if (simSub) simSub.textContent = `${char.tags.slice(0,2).join(' · ')} · ${char.faction}`;
+  const arenaName = document.getElementById('arena-hero-name');
+  if (arenaName) arenaName.textContent = char.name.split(' ')[0];
+  const arenaIcon = document.getElementById('arena-hero-icon');
+  if (arenaIcon) {
+    if (char.img) arenaIcon.innerHTML = `<img src="${char.img}" style="width:64px;height:64px;border-radius:10px;object-fit:cover;box-shadow:0 0 16px var(--cyan);"/>`;
+    else arenaIcon.textContent = char.icon;
+  }
+  const arenaWinName = document.getElementById('arena-hero-win-name');
+  if (arenaWinName) arenaWinName.textContent = char.name.split(' ')[0];
+  const hpTxt = document.getElementById('hp-aegis-txt');
+  if (hpTxt) hpTxt.textContent = `${char.attrs.Durability} / ${char.attrs.Durability}`;
+
+  renderCharacterLab();
+  renderStatBars();
+  renderInventoryRack();
+  updateLabSlotCards();
+  renderEffectiveAttrs();
+}
+
+// ============================================================
+// EDITOR — Stat Bars
+// ============================================================
+function renderStatBars() {
+  const char = CHARS[selectedCharIndex];
+  const maxAttr = 1000;
+  const container = document.getElementById('stat-bars');
+  if (!container) return;
+  container.innerHTML = Object.entries(char.attrs).map(([k,v]) => {
+    const pct = Math.min(v/maxAttr, 1);
+    return `
+      <div class="stat-bar-wrap">
+        <div class="stat-label">${k}</div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" style="width:${pct*100}%;background:${statColor(pct)}"></div>
+        </div>
+        <div class="stat-value">${v}</div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+// EDITOR — Mod Slots
+// ============================================================
+let selectedMod = 0;
+function renderModGrid() {
+  const grid = document.getElementById('mod-grid');
+  grid.innerHTML = MODS.map((m,i) => `
+    <div class="mod-slot ${i===selectedMod?'selected':''} ${m.compatible?'':'incompatible'}"
+         onclick="selectMod(${i})">
+      <div class="slot-top">
+        <div class="slot-icon">${m.icon}</div>
+        <div>
+          <div class="slot-type">${m.slot}</div>
+        </div>
+      </div>
+      ${m.equipped
+        ? `<div style="display:flex;align-items:center;justify-content:space-between;">
+             <div class="slot-name">${m.name}</div>
+             <span class="badge badge-green" style="font-size:8px;flex-shrink:0">EQUIPPED</span>
+           </div>`
+        : m.compatible
+          ? `<div class="slot-empty">＋ Install Modification</div>`
+          : `<div class="slot-warning">⚠ INCOMPATIBLE</div><div class="slot-name" style="font-size:11px;color:var(--text-dim)">${m.name}</div>`
+      }
+    </div>
+  `).join('');
+}
+
+function selectMod(i) {
+  selectedMod = i;
+  renderModGrid();
+  renderModDetails(i);
+}
+
+function renderModDetails(i) {
+  const m = MODS[i];
+  const panel = document.getElementById('mod-detail-content');
+  panel.innerHTML = `
+    <div class="mod-detail-icon">${m.icon}</div>
+    <div class="mod-detail-name">${m.name}</div>
+    <div style="text-align:center;padding:6px 16px 10px;">
+      <span class="badge ${m.compatible?'badge-green':'badge-orange'}" style="font-size:10px;">${m.compatible?'✓ COMPATIBLE':'⚠ INCOMPATIBLE'}</span>
+      ${m.equipped?'<span class="badge badge-cyan" style="font-size:10px;margin-left:5px;">EQUIPPED</span>':''}
+    </div>
+    <div class="divider"></div>
+    <div class="detail-section">
+      <div class="detail-section-title green">Advantages</div>
+      ${m.advantages.map(a=>`<div class="detail-item"><span class="icon" style="color:var(--green)">✓</span>${a}</div>`).join('')}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title red">Disadvantages</div>
+      ${m.disadvantages.map(d=>`<div class="detail-item"><span class="icon" style="color:var(--red)">✗</span>${d}</div>`).join('')}
+    </div>
+    <div class="cost-row">
+      <div class="cost-item"><div class="cost-key">Energy</div><div class="cost-val">⚡ ${m.energyCost}</div></div>
+      <div class="cost-item"><div class="cost-key">Weight</div><div class="cost-val">⚖ ${m.weight}</div></div>
+    </div>
+    <div class="detail-actions">
+      ${m.equipped
+        ? `<button class="btn btn-danger" style="flex:1;font-size:11px" onclick="toggleMod(${i})">✕ Remove</button>`
+        : m.compatible
+          ? `<button class="btn btn-primary" style="flex:1;font-size:11px" onclick="toggleMod(${i})">✚ Install</button>`
+          : `<button class="btn btn-outline" style="flex:1;font-size:11px;opacity:0.4" disabled>✗ Incompatible</button>`
+      }
+      <button class="btn btn-outline" style="font-size:11px;">👁 Preview</button>
+    </div>
+  `;
+}
+
+function toggleMod(i) {
+  MODS[i].equipped = !MODS[i].equipped;
+  renderModGrid();
+  renderModDetails(i);
+  renderEffectiveAttrs();
+  updateModBadge();
+}
+
+function updateModBadge() {
+  const count = MODS.filter(m=>m.equipped).length;
+  document.getElementById('mod-count-badge').textContent = `${count} mod${count!==1?'s':''} active`;
+}
+
+function renderEffectiveAttrs() {
+  const base = CHARS[selectedCharIndex].attrs;
+  const delta = {};
+  MODS.filter(m=>m.equipped && m.compatible).forEach(m => {
+    Object.entries(m.attrDelta).forEach(([k,v]) => { delta[k] = (delta[k]||0) + v; });
+  });
+  const grid = document.getElementById('effective-grid');
+  grid.innerHTML = Object.entries(base).map(([k,v]) => {
+    const d = delta[k] || 0;
+    const after = v + d;
+    const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'same';
+    const sign = d > 0 ? '+' : '';
+    return `
+      <div class="eff-item">
+        <div class="eff-label">${k}</div>
+        <div class="eff-vals">
+          <span class="eff-before">${v}</span>
+          <span class="eff-arrow">→</span>
+          <span class="eff-after ${cls}">${after}</span>
+          ${d !== 0 ? `<span class="eff-delta ${cls}">(${sign}${d})</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+// SIMULATION
+// ============================================================
+let simRunning = false;
+let simInterval = null;
+let simRound = 0;
+let aegisHP = 750, corrHP = 800;
+
+const LOG_TEMPLATES = [
+  (r) => ({icon:'⚡',text:`<span class="cyan">Aegis</span> activates Titanium Shield — Defense +95`,round:r}),
+  (r) => ({icon:'💥',text:`<span class="red">Corruptor</span> uses Neural Disruption — Reaction Time −30`,round:r}),
+  (r) => ({icon:'🛡',text:`Shield absorbs <span class="cyan">180</span> kinetic damage`,round:r}),
+  (r) => ({icon:'⚡',text:`<span class="cyan">Aegis</span> Counter-Strike — Attack Rating 305`,round:r}),
+  (r) => ({icon:'💥',text:`<span class="gold">CRITICAL HIT</span> — Corruptor takes <span class="red">428</span> damage`,round:r}),
+  (r) => ({icon:'✦',text:`<span class="red">Corruptor</span> Quantum Phase Shift active (cooldown: 3 rounds)`,round:r}),
+  (r) => ({icon:'⚡',text:`<span class="cyan">Aegis</span> Power Surge — all stats +15% for 2 rounds`,round:r}),
+  (r) => ({icon:'💥',text:`<span class="red">Corruptor</span> nullifies Aegis energy shield`,round:r}),
+  (r) => ({icon:'🛡',text:`<span class="cyan">Aegis</span> interpose — blocks ally damage`,round:r}),
+  (r) => ({icon:'⚡',text:`<span class="red">Corruptor</span> attempts phase shift — <span class="green">INTERCEPTED</span>`,round:r}),
+  (r) => ({icon:'💥',text:`<span class="cyan">Aegis</span> finisher — <span class="gold">742 DAMAGE</span>`,round:r}),
+  (r) => ({icon:'✦',text:`<span class="green">VICTORY</span> — Aegis Sentinel survives with 31% HP`,round:r}),
+];
+
+const UTILITY = [
+  {action:'Attack',    score:0.82},
+  {action:'Defend',    score:0.43},
+  {action:'Retreat',   score:0.12},
+  {action:'Interpose', score:0.67},
+];
+
+function addLog(entry) {
+  const container = document.getElementById('log-entries');
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `
+    <span class="log-round">R${entry.round}</span>
+    <span class="log-icon">${entry.icon}</span>
+    <span class="log-text">${entry.text}</span>
+  `;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function renderUtility(round) {
+  // Vary slightly per round
+  const noise = () => (Math.random()-0.5)*0.15;
+  const bars = document.getElementById('utility-bars');
+  bars.innerHTML = UTILITY.map(u => {
+    const s = Math.max(0.05, Math.min(0.99, u.score + noise()));
+    return `
+      <div class="utility-row">
+        <div class="utility-action">${u.action}</div>
+        <div class="utility-track"><div class="utility-fill" style="width:${s*100}%"></div></div>
+        <div class="utility-score">${s.toFixed(2)}</div>
+      </div>`;
+  }).join('');
+}
+
+function flashHit(type) {
+  const el = document.getElementById('hit-flash');
+  el.innerHTML = type === 'crit' ? '💥 CRITICAL!' : type === 'block' ? '🛡 BLOCKED' : '⚡ HIT';
+  el.style.color = type === 'crit' ? 'var(--gold)' : type === 'block' ? 'var(--cyan)' : 'var(--text)';
+  setTimeout(() => { el.innerHTML = ''; }, 800);
+}
+
+function randomSeed() {
+  const hex = () => Math.floor(Math.random()*16).toString(16).toUpperCase();
+  document.getElementById('seed-input').value = '#' + Array.from({length:8},hex).join('');
+}
+
+function startSim() {
+  if (simRunning) return;
+  simRunning = true;
+  simRound = 0;
+  const hero = CHARS[selectedCharIndex];
+  let heroHP = hero.attrs.Durability;
+  let thanosHP = 960;
+
+  document.getElementById('log-entries').innerHTML = '';
+  document.getElementById('sim-btn').disabled = true;
+  document.getElementById('sim-btn').textContent = '⏳ Simulating...';
+  document.getElementById('sim-status-text').textContent = 'Simulation running...';
+  document.getElementById('sim-dot').style.background = 'var(--green)';
+
+  const SIM_LOGS = [
+    (r) => ({icon:'⚡',text:`<span class="cyan">${hero.name.split(' ')[0]}</span> activates Arc Reactor Shield — Defense +120`,round:r}),
+    (r) => ({icon:'💥',text:`<span class="red">Thanos</span> strikes with Power Stone — Reaction Time −30`,round:r}),
+    (r) => ({icon:'🛡',text:`Vibranium/Arc Shield absorbs <span class="cyan">240</span> kinetic damage`,round:r}),
+    (r) => ({icon:'⚡',text:`<span class="cyan">${hero.name.split(' ')[0]}</span> Repulsor Barrage — Attack Rating 420`,round:r}),
+    (r) => ({icon:'💥',text:`<span class="gold">CRITICAL HIT</span> — Thanos takes <span class="red">510</span> damage`,round:r}),
+    (r) => ({icon:'✦',text:`<span class="red">Thanos</span> Space Stone Phase Shift (cooldown: 3 rounds)`,round:r}),
+    (r) => ({icon:'⚡',text:`<span class="cyan">${hero.name.split(' ')[0]}</span> Nanotech Overdrive — stats +25%`,round:r}),
+    (r) => ({icon:'💥',text:`<span class="red">Thanos</span> Reality Stone warp attempted`,round:r}),
+    (r) => ({icon:'🛡',text:`<span class="cyan">${hero.name.split(' ')[0]}</span> interpose — blocks lethal blast`,round:r}),
+    (r) => ({icon:'⚡',text:`<span class="red">Thanos</span> snap sequence — <span class="green">INTERCEPTED</span>`,round:r}),
+    (r) => ({icon:'💥',text:`<span class="cyan">${hero.name.split(' ')[0]}</span> Infinity Strike — <span class="gold">850 DAMAGE</span>`,round:r}),
+    (r) => ({icon:'✦',text:`<span class="green">VICTORY</span> — ${hero.name} defeats Thanos!`,round:r}),
+  ];
+
+  // Round dots
+  const dotsEl = document.getElementById('round-dots');
+  dotsEl.innerHTML = Array.from({length:12}, (_,i) =>
+    `<div id="rdot-${i}" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.1);transition:0.3s"></div>`
+  ).join('');
+
+  let logIdx = 0;
+  simInterval = setInterval(() => {
+    simRound++;
+    document.getElementById('round-num').textContent = simRound;
+
+    const dot = document.getElementById(`rdot-${simRound-1}`);
+    if (dot) { dot.style.background = 'var(--cyan)'; dot.style.boxShadow = '0 0 4px var(--cyan)'; }
+
+    const heroDmg = Math.floor(Math.random()*70 + 30);
+    const thanosDmg = Math.floor(Math.random()*80 + 20);
+    thanosHP = Math.max(0, thanosHP - heroDmg);
+    heroHP   = Math.max(0, heroHP - (thanosDmg > 70 ? 25 : thanosDmg * 0.15 | 0));
+
+    document.getElementById('hp-aegis').style.width = (heroHP/hero.attrs.Durability*100)+'%';
+    document.getElementById('hp-corr').style.width  = (thanosHP/960*100)+'%';
+    document.getElementById('hp-aegis-txt').textContent = heroHP+' / '+hero.attrs.Durability;
+    document.getElementById('hp-corr-txt').textContent  = thanosHP+' / 960';
+
+    const pct = Math.min(95, Math.max(5, Math.round(50 + (960-thanosHP)/960*40 - (hero.attrs.Durability-heroHP)/hero.attrs.Durability*20)));
+    document.getElementById('win-pct').textContent = pct;
+    document.getElementById('lose-pct').textContent = 100-pct;
+    document.getElementById('win-bar').style.width = pct+'%';
+
+    if (thanosDmg > 70) flashHit('crit');
+    else if (heroDmg < 35) flashHit('block');
+    else flashHit('hit');
+
+    if (logIdx < SIM_LOGS.length) {
+      addLog(SIM_LOGS[logIdx](simRound));
+      logIdx++;
+    }
+
+    renderUtility(simRound);
+
+    if (simRound >= 12 || thanosHP <= 0) {
+      clearInterval(simInterval);
+      simRunning = false;
+      document.getElementById('sim-btn').disabled = false;
+      document.getElementById('sim-btn').textContent = '▶ Run Again';
+      document.getElementById('sim-status-text').textContent = heroHP > 0 ? `✓ ${hero.name.split(' ')[0]} Victorious` : '✗ Simulation Complete';
+      document.getElementById('sim-dot').style.background = heroHP > 0 ? 'var(--green)' : 'var(--red)';
+      setTimeout(() => { switchTab('timeline'); }, 1800);
+    }
+  }, 900);
+}
+
+// ============================================================
+// TIMELINE EXPLORER & CODEX
+// ============================================================
+const TL_NODES = [
+  {id:'root',  x:60,  y:200, label:'Origin Timeline',    sub:'Earth-616 Endgame',        branch:'root',  outcomes:['ORIGIN'],                  keyEvents:['Avengers assemble at HQ','Thanos arrives']},
+  {id:'a',     x:220, y:120, label:'Timeline A',          sub:'Iron Man Snap',           branch:'a',     outcomes:['AVENGERS WIN'],            keyEvents:['Tony Stark acquires Infinity Stones','Stark suit absorbs surge']},
+  {id:'b',     x:220, y:300, label:'Timeline B',          sub:'Thanos Prevails',         branch:'b',     outcomes:['DECIMATION'],              keyEvents:['Gauntlet retained by Thanos','Avengers fallen']},
+  {id:'a1',    x:380, y:80,  label:'Branch A1',           sub:'Nanotech Shielding',      branch:'a',     outcomes:['SURVIVAL','VICTORY'],      keyEvents:['Mark LXXXV nanotech absorbs gamma surge','Stark survives']},
+  {id:'a2',    x:380, y:160, label:'Branch A2',           sub:'Quantum Realignment',     branch:'a',     outcomes:['TIME BRANCH'],             keyEvents:['Stark redirects surge into Quantum Realm','Multiverse unlocked']},
+  {id:'b1',    x:380, y:280, label:'Branch B1',           sub:'Sanctuary III Assault',   branch:'b',     outcomes:['RESISTANCE'],               keyEvents:['Earth forces retreat to Wakanda','Underground resistance forms']},
+  {id:'b2',    x:380, y:360, label:'Branch B2',           sub:'Asgardian Uprising',      branch:'b',     outcomes:['COSMIC WAR'],               keyEvents:['Thor rallies remaining Asgardians','Cosmic battle erupts']},
+  {id:'a2a',   x:540, y:140, label:'Branch A2-Alpha',     sub:'Infinite Futures',        branch:'a',     outcomes:['MULTIVERSE'],              keyEvents:['Multiverse timeline tree stabilized','Peace restored across realms']},
+];
+const TL_EDGES = [
+  {from:'root',to:'a'}, {from:'root',to:'b'},
+  {from:'a',to:'a1'}, {from:'a',to:'a2'},
+  {from:'b',to:'b1'}, {from:'b',to:'b2'},
+  {from:'a2',to:'a2a'},
+];
+let selectedNode = 'a2';
+
+const NARRATIVES = {
+  root: 'At the nexus of all realities lies the final confrontation against Thanos on Earth-616.',
+  a:    'In Timeline A, Tony Stark acquires the Infinity Stones. The nanotech Mark LXXXV suit channels cosmic energy to rewrite reality.',
+  b:    'In Timeline B, Thanos retains control of the Infinity Gauntlet, initiating a cosmic realignment.',
+  a1:   'With Nanotech Shielding installed, the Mark LXXXV suit dissipates the lethal gamma energy. Iron Man survives the snap to lead the new Avengers.',
+  a2:   'Through Quantum Realignment, Stark redirects the stone energy into the Quantum Realm, unlocking infinite timeline branches.',
+  b1:   'With Earth compromised, Captain America and Black Widow lead the Wakandan Underground Resistance.',
+  b2:   'Thor Odinson calls upon Stormbreaker and Asgardian myth, forging a cosmic alliance across nine realms.',
+  a2a:  'The multiverse tree stabilizes into infinite peaceful futures under the watch of the Illuminati.',
+};
+
+function renderTimeline() {
+  const svg = document.getElementById('timeline-svg');
+  const W = svg.parentElement.clientWidth || 700;
+  const H = svg.parentElement.clientHeight || 400;
+  const scaleX = (W - 80) / 600;
+  const scaleY = (H - 40) / 400;
+
+  function nx(node) { return 30 + node.x * scaleX; }
+  function ny(node) { return 20 + node.y * scaleY; }
+
+  svg.innerHTML = `
+    <defs>
+      <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <marker id="arrow-a" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,200,255,0.5)"/>
+      </marker>
+      <marker id="arrow-b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,140,66,0.5)"/>
+      </marker>
+    </defs>`;
+
+  // Edges
+  TL_EDGES.forEach(e => {
+    const from = TL_NODES.find(n=>n.id===e.from);
+    const to   = TL_NODES.find(n=>n.id===e.to);
+    if (!from || !to) return;
+    const isBranchB = to.branch === 'b';
+    const color = isBranchB ? 'rgba(255,140,66,0.45)' : 'rgba(0,200,255,0.45)';
+    const mid = (nx(from) + nx(to)) / 2;
+    svg.innerHTML += `
+      <path d="M${nx(from)+50},${ny(from)} C${mid},${ny(from)} ${mid},${ny(to)} ${nx(to)},${ny(to)}"
+        fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 3"
+        marker-end="url(#${isBranchB?'arrow-b':'arrow-a'})" />`;
+  });
+
+  // Nodes
+  TL_NODES.forEach(n => {
+    const x = nx(n), y = ny(n);
+    const isSelected = n.id === selectedNode;
+    const isBranchB = n.branch === 'b';
+    const strokeColor = isBranchB ? (isSelected ? 'rgba(255,140,66,0.95)' : 'rgba(255,140,66,0.4)') : (isSelected ? 'var(--cyan)' : 'rgba(0,200,255,0.35)');
+    const glowFilter = isSelected ? 'url(#glow)' : '';
+
+    svg.innerHTML += `
+      <g class="node-card ${isSelected?'active':''} ${isBranchB?'branch-b':''}"
+         onclick="selectTimelineNode('${n.id}')" style="cursor:pointer">
+        <rect x="${x}" y="${y-22}" width="110" height="44" rx="7" ry="7"
+          fill="rgba(8,14,28,0.9)" stroke="${strokeColor}" stroke-width="${isSelected?2.5:1.5}"
+          filter="${glowFilter}" />
+        <text x="${x+8}" y="${y-7}" font-family="Rajdhani,sans-serif" font-size="11" font-weight="700"
+          fill="${isBranchB?'rgba(255,140,66,0.9)':'rgba(0,200,255,0.9)'}">${n.label}</text>
+        <text x="${x+8}" y="${y+9}" font-family="Outfit,sans-serif" font-size="10"
+          fill="rgba(180,200,220,0.75)">${n.sub}</text>
+        ${n.outcomes.map((o,i) => `
+          <rect x="${x+8+(i*52)}" y="${y+16}" width="${Math.min(48,o.length*5+8)}" height="12" rx="6"
+            fill="${isBranchB?'rgba(255,140,66,0.12)':'rgba(0,200,255,0.12)'}"
+            stroke="${isBranchB?'rgba(255,140,66,0.4)':'rgba(0,200,255,0.35)'}" stroke-width="0.8"/>
+          <text x="${x+12+(i*52)}" y="${y+25}" font-family="Rajdhani,sans-serif" font-size="7"
+            fill="${isBranchB?'rgba(255,140,66,0.9)':'rgba(0,200,255,0.9)'}">${o}</text>
+        `).join('')}
+      </g>`;
+  });
+
+  renderTimelineDetail(selectedNode);
+  renderNarrative(selectedNode);
+}
+
+function selectTimelineNode(id) {
+  selectedNode = id;
+  renderTimeline();
+}
+
+function renderTimelineDetail(id) {
+  const n = TL_NODES.find(x=>x.id===id);
+  if (!n) return;
+  const isBranchB = n.branch === 'b';
+  const color = isBranchB ? 'var(--orange)' : 'var(--cyan)';
+  const detail = document.getElementById('timeline-detail-content');
+  detail.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:${color}">${n.label}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:3px">${n.sub}</div>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:5px;flex-wrap:wrap">
+      ${n.outcomes.map(o=>`<span class="badge ${isBranchB?'badge-orange':'badge-cyan'}" style="font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:1.5px;font-family:'Rajdhani',sans-serif;text-transform:uppercase;margin-bottom:8px">Key Events</div>
+      ${n.keyEvents.map(e=>`<div style="display:flex;gap:7px;font-size:12px;color:var(--text);margin-bottom:5px"><span style="color:${color}">✦</span>${e}</div>`).join('')}
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:14px">
+      <div style="font-size:10px;color:var(--text-dim);font-family:'Rajdhani',sans-serif;letter-spacing:1.5px;margin-bottom:6px">CHARACTER STATE</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:24px">${CHARS[selectedCharIndex].icon}</span>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--text-bright);font-family:'Rajdhani',sans-serif;font-weight:600">${CHARS[selectedCharIndex].name}</div>
+          <div class="stat-bar-wrap" style="margin-top:5px;margin-bottom:3px">
+            <div class="stat-label" style="width:68px;font-size:10px">Durability</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${isBranchB?'15':'85'}%;background:var(--cyan)"></div></div>
+            <div class="stat-value" style="font-size:10px">${isBranchB ? '110' : Math.round(CHARS[selectedCharIndex].attrs.Durability*0.85)}/${CHARS[selectedCharIndex].attrs.Durability}</div>
+          </div>
+          <div class="stat-bar-wrap">
+            <div class="stat-label" style="width:68px;font-size:10px">Energy</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${isBranchB?'8':'70'}%;background:var(--green)"></div></div>
+            <div class="stat-value" style="font-size:10px">${isBranchB ? '30' : Math.round(CHARS[selectedCharIndex].attrs.Energy*0.7)}/${CHARS[selectedCharIndex].attrs.Energy}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <button class="btn btn-primary" style="font-size:11px;">↩ Restore This Node</button>
+      <button class="btn btn-outline" style="font-size:11px;">⑂ Branch From Here</button>
+    </div>
+  `;
+}
+
+function renderNarrative(id) {
+  const text = NARRATIVES[id] || 'Select a timeline node to generate a narrative summary.';
+  const el = document.getElementById('narrative-text');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = text;
+    el.style.opacity = '1';
+    el.style.transition = 'opacity 0.4s';
+  }, 150);
+}
+
+function regenNarrative() {
+  const btn = document.getElementById('regen-btn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+  setTimeout(() => {
+    renderNarrative(selectedNode);
+    btn.textContent = '✦ Regenerate Narrative';
+    btn.disabled = false;
+  }, 1200);
+}
+
+// ============================================================
+// CODEX
+// ============================================================
+// ============================================================
+// CODEX RENDERER
+// ============================================================
+function renderCodexNav() {
+  const container = document.getElementById('codex-nav-list');
+  if (!container) return;
+  container.innerHTML = CHARS.map((c, i) => `
+    <div class="codex-nav-item ${i===codexChar?'active':''}" onclick="selectCodexChar(${i})">
+      <span class="codex-icon">${c.icon}</span>
+      <div>
+        <div class="codex-title">${c.name}</div>
+        <div class="codex-sub">${c.tags.slice(0,2).join(' · ')} · ${c.faction}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+let codexChar = 0;
+function selectCodexChar(i) {
+  codexChar = i;
+  renderCodexNav();
+  renderCodex(i);
+}
+
+function renderCodex(i) {
+  const c = CHARS[i];
+  const factionColor = c.faction === 'VILLAIN' ? 'var(--red)' : c.faction === 'HERO' ? 'var(--green)' : 'var(--text-dim)';
+  const header = document.getElementById('codex-header');
+  header.innerHTML = `
+    <div class="codex-avatar" style="width:64px;height:64px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(0,100,200,0.2);">
+      ${c.img ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;"/>` : c.icon}
+    </div>
+    <div class="codex-headinfo">
+      <h2>${c.name}</h2>
+      <p>${c.desc}</p>
+      <div class="tags">
+        ${c.tags.map(t=>`<span class="badge badge-cyan" style="font-size:9px">${t}</span>`).join('')}
+        <span class="badge" style="font-size:9px;color:${factionColor};border-color:${factionColor};background:transparent;">${c.faction}</span>
+      </div>
+    </div>
+  `;
+
+  const body = document.getElementById('codex-body');
+  const maxAttr = 1000;
+  body.innerHTML = `
+    <div class="codex-section">
+      <h3>Base Attributes</h3>
+      ${Object.entries(c.attrs).map(([k,v])=>{
+        const pct = v/maxAttr;
+        return `<div class="stat-bar-wrap">
+          <div class="stat-label">${k}</div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct*100}%;background:${statColor(pct)}"></div></div>
+          <div class="stat-value">${v}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div>
+      <div class="codex-section">
+        <h3>AI Personality</h3>
+        ${Object.entries(c.personality).map(([k,v])=>`
+          <div class="personality-row">
+            <div class="personality-label">${k}</div>
+            <div class="personality-bar-track"><div class="personality-bar-fill" style="width:${v*100}%"></div></div>
+            <div class="personality-val">${v.toFixed(2)}</div>
+          </div>`).join('')}
+      </div>
+      <div class="codex-section" style="margin-top:16px">
+        <h3>Relationships</h3>
+        ${c.relationships.map(r=>{
+          const aff = r.affinity;
+          const col = aff > 0 ? 'var(--green)' : 'var(--red)';
+          return `<div class="rel-item">
+            <div class="rel-name">${r.name}</div>
+            <span class="badge ${aff>0?'badge-green':'badge-red'}" style="font-size:9px">${r.type}</span>
+            <span class="rel-affinity" style="color:${col}">${aff > 0 ? '+':''}${aff.toFixed(1)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('whatif-theme', isLight ? 'dark' : 'light');
+}
+// Restore saved theme on load (enforce dark monochrome)
+(function() {
+  document.documentElement.setAttribute('data-theme', 'dark');
+  localStorage.setItem('whatif-theme', 'dark');
+})();
+
+// ============================================================
+// THREE.JS 3D WEBGL ENGINE & MARVEL HERO 3D MESH GENERATOR
+// ============================================================
+let canvas, scene, camera, renderer, heroGroup, particlesGroup, raycaster, mouse;
+let rotY3D = 0, rotX3D = 0;
+let isDragging3D = false;
+let startX3D = 0, startY3D = 0;
+let autoRotate3D = true;
+let hoveredMesh = null;
+let mixer = null;
+const clock = new THREE.Clock();
+
+function initThreeJS() {
+  canvas = document.getElementById('three-canvas');
+  if (!canvas || typeof THREE === 'undefined') return;
+
+  const width = 340;
+  const height = 440;
+
+  // Scene & Raycaster
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x080808, 0.05);
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  camera.position.set(0, 1.2, 5.5);
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.35;
+  if (THREE.sRGBEncoding) {
+    renderer.outputEncoding = THREE.sRGBEncoding;
+  }
+
+  // Studio Lights (Monochrome White & Silver)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  scene.add(ambientLight);
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
+  mainLight.position.set(5, 10, 7);
+  mainLight.castShadow = true;
+  scene.add(mainLight);
+
+  const backLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  backLight.position.set(-5, 5, -7);
+  scene.add(backLight);
+
+  const rimLight = new THREE.PointLight(0xffffff, 2.5, 15);
+  rimLight.position.set(-4, 3, -2);
+  scene.add(rimLight);
+
+  const fillLight = new THREE.PointLight(0x888888, 2.0, 15);
+  fillLight.position.set(4, -2, 3);
+  scene.add(fillLight);
+
+  // Hero Container Group
+  heroGroup = new THREE.Group();
+  scene.add(heroGroup);
+
+  // Hologram Particle Ring
+  particlesGroup = new THREE.Group();
+  const particleCount = 150;
+  const particleGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 1.6 + Math.random() * 0.8;
+    positions[i * 3] = Math.cos(angle) * radius;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 3.5;
+    positions[i * 3 + 2] = Math.sin(angle) * radius;
+  }
+
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const particleMat = new THREE.PointsMaterial({
+    color: 0xffffff, size: 0.04, transparent: true, opacity: 0.8,
+    blending: THREE.AdditiveBlending
+  });
+  const points = new THREE.Points(particleGeo, particleMat);
+  particlesGroup.add(points);
+  scene.add(particlesGroup);
+
+  // Initial 3D Mesh
+  buildHero3DMesh(CHARS[selectedCharIndex].id);
+
+  // Raycasting & Click/Hover Listener
+  canvas.addEventListener('click', onCanvas3DClick);
+  canvas.addEventListener('mousemove', onCanvas3DHover);
+
+  // Mouse & Touch Drag Rotation Controls
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging3D = true;
+    startX3D = e.clientX;
+    startY3D = e.clientY;
+    autoRotate3D = false;
+    updateAutoRotateBtn();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging3D || !heroGroup) return;
+    const deltaX = e.clientX - startX3D;
+    const deltaY = e.clientY - startY3D;
+    rotY3D += deltaX * 0.012;
+    rotX3D += deltaY * 0.008;
+    rotX3D = Math.max(-0.5, Math.min(0.5, rotX3D));
+    heroGroup.rotation.y = rotY3D;
+    heroGroup.rotation.x = rotX3D;
+    startX3D = e.clientX;
+    startY3D = e.clientY;
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging3D = false;
+  });
+
+  // Render Loop
+  animateThreeJS();
+}
+
+function getHitSlot(intersect) {
+  if (intersect && intersect.object && intersect.object.userData && intersect.object.userData.slotIndex !== undefined) {
+    return {
+      index: intersect.object.userData.slotIndex,
+      name: intersect.object.userData.slotName || 'COMPONENT'
+    };
+  }
+  // Spatial fallback on 3D hit point
+  if (!intersect || !intersect.point) return { index: 2, name: 'POWER SOURCE' };
+  const pt = intersect.point;
+  if (pt.y > 1.8) {
+    return { index: 5, name: 'AI SYSTEM' }; // Head / Helmet
+  } else if (pt.y > 0.7) {
+    if (Math.abs(pt.x) < 0.38) {
+      return { index: 2, name: 'POWER SOURCE' }; // Arc Reactor / Chest Core
+    } else if (pt.x > 0.38) {
+      return { index: 1, name: 'WEAPON SYSTEM' }; // Right Arm
+    } else {
+      return { index: 3, name: 'DEFENSE SYSTEM' }; // Left Arm
+    }
+  } else if (pt.y > 0.1) {
+    return { index: 0, name: 'ARMOR LAYER' }; // Torso / Armor Layer
+  } else {
+    return { index: 4, name: 'MOBILITY SYSTEM' }; // Legs / Thrusters
+  }
+}
+
+function onCanvas3DHover(e) {
+  if (!canvas || !raycaster || !heroGroup || !renderer || !camera) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(heroGroup.children, true);
+
+  const tagEl = document.getElementById('hud-component-tag');
+  if (intersects.length > 0) {
+    const slot = getHitSlot(intersects[0]);
+    if (slot) {
+      if (tagEl) tagEl.textContent = `TARGET: ${slot.name}`;
+      renderer.domElement.style.cursor = 'pointer';
+      return;
+    }
+  }
+  if (tagEl) tagEl.textContent = '3D INTERACTIVE BODY MESH';
+  renderer.domElement.style.cursor = 'grab';
+}
+
+function onCanvas3DClick(e) {
+  if (!raycaster || !heroGroup || !renderer || !camera) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(heroGroup.children, true);
+
+  if (intersects.length > 0) {
+    const slot = getHitSlot(intersects[0]);
+    if (slot) {
+      selectModSlot(slot.index);
+      flashMesh(intersects[0].object);
+    }
+  }
+}
+
+function flashMesh(mesh) {
+  if (!mesh || !mesh.material) return;
+  if (mesh.material.emissive) {
+    const origEmissive = mesh.material.emissive.getHex();
+    mesh.material.emissive.setHex(0x00ff88);
+    setTimeout(() => {
+      mesh.material.emissive.setHex(origEmissive);
+    }, 400);
+  } else if (mesh.material.color) {
+    const origColor = mesh.material.color.getHex();
+    mesh.material.color.setHex(0x00ff88);
+    setTimeout(() => {
+      mesh.material.color.setHex(origColor);
+    }, 400);
+  }
+}
+
+function handleCanvasDrop(e) {
+  e.preventDefault();
+  const modId = e.dataTransfer.getData('text/plain');
+  if (!modId) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(heroGroup.children, true);
+
+  if (intersects.length > 0) {
+    const slot = getHitSlot(intersects[0]);
+    if (slot) {
+      equipModById(modId);
+      selectModSlot(slot.index);
+      flashMesh(intersects[0].object);
+      return;
+    }
+  }
+  equipModById(modId);
+}
+
+function animateThreeJS() {
+  requestAnimationFrame(animateThreeJS);
+
+  const delta = clock.getDelta();
+  if (mixer) {
+    mixer.update(delta);
+  }
+
+  if (autoRotate3D && heroGroup) {
+    rotY3D += 0.008;
+    heroGroup.rotation.y = rotY3D;
+  }
+
+  if (particlesGroup) {
+    particlesGroup.rotation.y -= 0.003;
+  }
+
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
+}
+
+// Build Photorealistic Curved PBR 3D Model for Iron Man & Marvel Roster
+function buildHero3DMesh(heroId) {
+  if (!heroGroup) return;
+  if (mixer) {
+    mixer.stopAllAction();
+    mixer = null;
+  }
+  // Clear previous mesh
+  while (heroGroup.children.length > 0) {
+    const obj = heroGroup.children[0];
+    heroGroup.remove(obj);
+  }
+
+  const char = CHARS.find(c => c.id === heroId) || CHARS[0];
+
+  // IF 3D MODEL (.glb / .gltf) IS PROVIDED
+  if (char && char.gltf && typeof THREE.GLTFLoader !== 'undefined') {
+    const tagEl = document.getElementById('hud-component-tag');
+    if (tagEl) tagEl.textContent = 'LOADING 3D BLENDER MODEL...';
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(char.gltf, (gltf) => {
+      const model = gltf.scene;
+
+      // Calculate bounding box to normalize scale and center position
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+
+      const targetHeight = 3.6;
+      const scale = targetHeight / (size.y || 1);
+      model.scale.set(scale, scale, scale);
+
+      // Recalculate after scaling to position precisely on pedestal
+      const scaledBox = new THREE.Box3().setFromObject(model);
+      const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+      model.position.x = -scaledCenter.x;
+      model.position.y = -scaledBox.min.y - 0.85; // Align feet with pedestal ring
+      model.position.z = -scaledCenter.z;
+
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+          if (node.material) {
+            node.material.side = THREE.DoubleSide;
+            node.material.needsUpdate = true;
+            if (node.material.roughness !== undefined) {
+              node.material.roughness = Math.min(node.material.roughness, 0.45);
+            }
+          }
+        }
+      });
+
+      // Play animation if included in 3D model
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+      }
+
+      // Add dynamic glowing point light on the chest for Iron Man
+      if (heroId === 'iron_man') {
+        const chestLight = new THREE.PointLight(0xffffff, 2.8, 4.5);
+        chestLight.position.set(0, 1.15, 0.45);
+        heroGroup.add(chestLight);
+      }
+
+      heroGroup.add(model);
+      updateEquipped3DAccessories();
+      if (tagEl) tagEl.textContent = '3D INTERACTIVE BODY MESH';
+    }, (xhr) => {
+      if (xhr.lengthComputable && tagEl) {
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        tagEl.textContent = `LOADING 3D MODEL: ${pct}%`;
+      }
+    }, (err) => {
+      console.warn("GLTF Load error, falling back to procedural mesh:", err);
+      if (tagEl) tagEl.textContent = '3D INTERACTIVE BODY MESH';
+    });
+    return;
+  }
+
+  // Ultra-Realistic PBR Metallic Monochrome Materials
+  const redMetalMat = new THREE.MeshStandardMaterial({
+    color: 0x242424, metalness: 0.92, roughness: 0.2,
+    emissive: 0x111111, emissiveIntensity: 0.2
+  });
+  const goldMetalMat = new THREE.MeshStandardMaterial({
+    color: 0xd4d4d4, metalness: 0.95, roughness: 0.15,
+    emissive: 0x222222, emissiveIntensity: 0.1
+  });
+  const darkVibraniumMat = new THREE.MeshStandardMaterial({
+    color: 0x151515, metalness: 0.88, roughness: 0.28
+  });
+  const arcGlowMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff
+  });
+
+  if (heroId === 'iron_man') {
+    // TONY STARK — IRON MAN MARK LXXXV HIGH-PRECISION 3D SUIT MESH (MONOCHROME)
+    const ironManSuit = new THREE.Group();
+
+    // 1. High-Detail 3D Parallax Character Mesh
+    const texLoader = new THREE.TextureLoader();
+    const colorTex = texLoader.load('assets/ironman_mcu_clean.png');
+    const depthTex = texLoader.load('assets/ironman_depth_clean.png');
+
+    const suitGeo = new THREE.PlaneGeometry(2.3, 4.2, 64, 64);
+    const suitMat = new THREE.MeshStandardMaterial({
+      map: colorTex,
+      displacementMap: depthTex,
+      displacementScale: 0.1,
+      displacementBias: 0.0,
+      transparent: true,
+      alphaTest: 0.45,
+      metalness: 0.88,
+      roughness: 0.2,
+      side: THREE.DoubleSide
+    });
+
+    const suitMesh = new THREE.Mesh(suitGeo, suitMat);
+    suitMesh.position.set(0, 0.4, 0);
+    suitMesh.userData = { slotIndex: 2, slotName: 'POWER SOURCE' };
+    ironManSuit.add(suitMesh);
+
+    // 2. 3D Metallic Shoulder Pauldrons
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.95, roughness: 0.14 });
+    const shoulderGeo = new THREE.SphereGeometry(0.22, 24, 24);
+    shoulderGeo.scale(1.1, 0.85, 0.85);
+
+    const shoulderL = new THREE.Mesh(shoulderGeo, goldMat);
+    shoulderL.position.set(-0.62, 1.45, 0.12);
+    shoulderL.userData = { slotIndex: 0, slotName: 'ARMOR LAYER' };
+
+    const shoulderR = new THREE.Mesh(shoulderGeo, goldMat);
+    shoulderR.position.set(0.62, 1.45, 0.12);
+    shoulderR.userData = { slotIndex: 0, slotName: 'ARMOR LAYER' };
+
+    ironManSuit.add(shoulderL);
+    ironManSuit.add(shoulderR);
+
+    // 3. 3D Triangular Glowing Arc Reactor Core (Chest Core)
+    const arcRingGeo = new THREE.TorusGeometry(0.12, 0.025, 16, 32);
+    const arcRingMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const arcRing = new THREE.Mesh(arcRingGeo, arcRingMat);
+    arcRing.position.set(0.04, 0.92, 0.22);
+    arcRing.userData = { slotIndex: 2, slotName: 'POWER SOURCE' };
+    ironManSuit.add(arcRing);
+
+    const arcCoreGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.04, 3);
+    arcCoreGeo.rotateX(Math.PI / 2);
+    const arcCore = new THREE.Mesh(arcCoreGeo, arcRingMat);
+    arcCore.position.set(0.04, 0.92, 0.23);
+    arcCore.userData = { slotIndex: 2, slotName: 'POWER SOURCE' };
+    ironManSuit.add(arcCore);
+
+    // Arc Reactor Light Source
+    const arcLight = new THREE.PointLight(0xffffff, 4.0, 5);
+    arcLight.position.set(0.04, 0.92, 0.35);
+    ironManSuit.add(arcLight);
+
+    // 4. Glowing 3D Eye Visors
+    const eyeGeo = new THREE.BoxGeometry(0.1, 0.028, 0.04);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeL.position.set(-0.09, 1.88, 0.18);
+    eyeL.rotation.z = -0.12;
+    eyeL.userData = { slotIndex: 5, slotName: 'AI SYSTEM' };
+
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeR.position.set(0.09, 1.88, 0.18);
+    eyeR.rotation.z = 0.12;
+    eyeR.userData = { slotIndex: 5, slotName: 'AI SYSTEM' };
+
+    ironManSuit.add(eyeL);
+    ironManSuit.add(eyeR);
+
+    heroGroup.add(ironManSuit);
+    updateEquipped3DAccessories();
+  } else {
+    // FULL 3D PROCEDURAL CHARACTER MESH GENERATION (MONOCHROME TITANIUM & OBSIDIAN)
+    const heroSuit = new THREE.Group();
+
+    const suitMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.85, roughness: 0.2 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.95, roughness: 0.1 });
+
+    // 1. Head
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 32), suitMat);
+    headMesh.position.y = 1.65;
+    headMesh.userData = { slotIndex: 5, slotName: 'AI SYSTEM' };
+    heroSuit.add(headMesh);
+
+    // 2. Torso Chest
+    const chestMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.38, 0.95, 32), suitMat);
+    chestMesh.position.y = 0.95;
+    chestMesh.userData = { slotIndex: 2, slotName: 'POWER SOURCE' };
+    heroSuit.add(chestMesh);
+
+    // Special Emblem for Chest
+    const emblemCore = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), accentMat);
+    emblemCore.position.set(0, 1.05, 0.26);
+    emblemCore.userData = { slotIndex: 2, slotName: 'POWER SOURCE' };
+    heroSuit.add(emblemCore);
+
+    // 3. Shoulders
+    const shL = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), accentMat);
+    shL.position.set(-0.56, 1.3, 0);
+    shL.userData = { slotIndex: 0, slotName: 'ARMOR LAYER' };
+    const shR = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), accentMat);
+    shR.position.set(0.56, 1.3, 0);
+    shR.userData = { slotIndex: 0, slotName: 'ARMOR LAYER' };
+    heroSuit.add(shL);
+    heroSuit.add(shR);
+
+    // 4. Arms
+    const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.8, 32), suitMat);
+    armR.position.set(0.6, 0.65, 0);
+    armR.userData = { slotIndex: 1, slotName: 'WEAPON SYSTEM' };
+    const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.8, 32), suitMat);
+    armL.position.set(-0.6, 0.65, 0);
+    armL.userData = { slotIndex: 3, slotName: 'DEFENSE SYSTEM' };
+    heroSuit.add(armR);
+    heroSuit.add(armL);
+
+    // 5. Legs
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 1.1, 32), suitMat);
+    legL.position.set(-0.24, -0.3, 0);
+    legL.userData = { slotIndex: 4, slotName: 'MOBILITY SYSTEM' };
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 1.1, 32), suitMat);
+    legR.position.set(0.24, -0.3, 0);
+    legR.userData = { slotIndex: 4, slotName: 'MOBILITY SYSTEM' };
+    heroSuit.add(legL);
+    heroSuit.add(legR);
+
+    heroGroup.add(heroSuit);
+    updateEquipped3DAccessories();
+  }
+}
+
+// 3D Equipped Accessory Manager for Weapons, Shields & Relics
+let accessoryGroup = null;
+
+function updateEquipped3DAccessories() {
+  if (!heroGroup) return;
+  if (!accessoryGroup) {
+    accessoryGroup = new THREE.Group();
+    heroGroup.add(accessoryGroup);
+  } else if (!heroGroup.children.includes(accessoryGroup)) {
+    heroGroup.add(accessoryGroup);
+  }
+
+  // Clear previous accessories
+  while (accessoryGroup.children.length > 0) {
+    accessoryGroup.remove(accessoryGroup.children[0]);
+  }
+
+  const equippedWith3D = MODS.filter(m => m.equipped && m.gltf);
+  if (equippedWith3D.length === 0 || typeof THREE.GLTFLoader === 'undefined') return;
+
+  const loader = new THREE.GLTFLoader();
+  equippedWith3D.forEach(mod => {
+    loader.load(mod.gltf, (gltf) => {
+      const accModel = gltf.scene;
+      const box = new THREE.Box3().setFromObject(accModel);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      
+      const targetSize = (mod.id === 'panther_necklace') ? 0.75 : 1.45;
+      const s = targetSize / maxDim;
+      accModel.scale.set(s, s, s);
+
+      if (mod.id === 'vibranium_shield' || mod.id === 'eldritch_shield') {
+        accModel.position.set(-1.15, 0.85, 0.35);
+        accModel.rotation.set(0, Math.PI / 4, 0);
+      } else if (mod.id === 'thors_mjolnir') {
+        accModel.position.set(1.15, 0.85, 0.25);
+        accModel.rotation.set(0, -Math.PI / 6, Math.PI / 8);
+      } else if (mod.id === 'panther_necklace') {
+        accModel.position.set(0, 1.4, 0.22);
+      } else {
+        accModel.position.set(1.0, 1.0, 0);
+      }
+
+      accModel.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      accessoryGroup.add(accModel);
+    });
+  });
+}
+
+function rotate3D(deg) {
+  autoRotate3D = false;
+  updateAutoRotateBtn();
+  rotY3D += (deg * Math.PI) / 180;
+  if (heroGroup) heroGroup.rotation.y = rotY3D;
+}
+
+function reset3DView() {
+  rotY3D = 0; rotX3D = 0;
+  autoRotate3D = true;
+  updateAutoRotateBtn();
+  if (heroGroup) {
+    heroGroup.rotation.y = 0;
+    heroGroup.rotation.x = 0;
+  }
+}
+
+function toggleAutoRotate() {
+  autoRotate3D = !autoRotate3D;
+  updateAutoRotateBtn();
+}
+
+function updateAutoRotateBtn() {
+  const btn = document.getElementById('autorotate-btn');
+  if (btn) btn.textContent = `⟳ Auto-Rotate: ${autoRotate3D ? 'ON' : 'OFF'}`;
+}
+
+// DRAG AND DROP INVENTORY RACK
+function renderInventoryRack() {
+  const rack = document.getElementById('inventory-rack');
+  if (!rack) return;
+  rack.innerHTML = MODS.map(m => {
+    return `
+      <div class="drag-mod-item" draggable="true" ondragstart="handleDragStart(event, '${m.id}')" ondragend="handleDragEnd(event)">
+        <span class="drag-mod-icon">${m.icon}</span>
+        <div>
+          <div class="drag-mod-name">${m.name}</div>
+          <div class="drag-mod-slot">${m.slot}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function handleDragStart(e, modId) {
+  e.dataTransfer.setData('text/plain', modId);
+  e.target.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e, slotModId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const modId = e.dataTransfer.getData('text/plain') || slotModId;
+  if (modId) {
+    equipModById(modId);
+  }
+}
+
+function equipModById(modId) {
+  const mod = MODS.find(m => m.id === modId);
+  if (!mod) return;
+  MODS.forEach(m => {
+    if (m.slot === mod.slot) m.equipped = false;
+  });
+  mod.equipped = true;
+  
+  // Flash 3D Stage
+  const stage = document.getElementById('char-3d-model');
+  if (stage) {
+    stage.style.filter = 'drop-shadow(0 0 45px #ffffff) brightness(1.25)';
+    setTimeout(() => stage.style.filter = '', 600);
+  }
+
+  updateLabSlotCards();
+  renderEffectiveAttrs();
+  if (typeof updateEquipped3DAccessories === 'function') {
+    updateEquipped3DAccessories();
+  }
+}
+
+function updateLabSlotCards() {
+  const slots = [
+    { id: 0, slot: 'ARMOR LAYER' },
+    { id: 1, slot: 'WEAPON SYSTEM' },
+    { id: 2, slot: 'POWER SOURCE' },
+    { id: 3, slot: 'DEFENSE SYSTEM' },
+    { id: 4, slot: 'MOBILITY SYSTEM' },
+    { id: 5, slot: 'AI SYSTEM' }
+  ];
+
+  slots.forEach(s => {
+    const equippedMod = MODS.find(m => m.slot === s.slot && m.equipped);
+    const nameEl = document.getElementById(`slot-name-${s.id}`);
+    const subEl = document.getElementById(`slot-sub-${s.id}`);
+    const statusEl = document.getElementById(`slot-status-${s.id}`);
+    const cardEl = document.getElementById(`slot-card-${s.id}`);
+
+    if (equippedMod) {
+      if (nameEl) nameEl.textContent = equippedMod.name;
+      if (subEl) subEl.textContent = equippedMod.advantages[0] || 'Active';
+      if (statusEl) {
+        statusEl.textContent = 'EQUIPPED';
+        statusEl.className = 'slot-badge badge badge-green';
+      }
+      if (cardEl) cardEl.classList.add('selected');
+    } else {
+      if (nameEl) nameEl.textContent = `+ Install ${s.slot}`;
+      if (subEl) subEl.textContent = 'Empty slot';
+      if (statusEl) {
+        statusEl.textContent = 'EMPTY';
+        statusEl.className = 'slot-badge badge badge-dim';
+      }
+      if (cardEl) cardEl.classList.remove('selected');
+    }
+  });
+
+  const activeCount = MODS.filter(m => m.equipped).length;
+  const countBadge = document.getElementById('mod-count-badge');
+  if (countBadge) countBadge.textContent = `${activeCount} Mod${activeCount > 1 ? 's' : ''} Active`;
+}
+
+function selectModSlot(slotIndex) {
+  const slots = ['ARMOR LAYER', 'WEAPON SYSTEM', 'POWER SOURCE', 'DEFENSE SYSTEM', 'MOBILITY SYSTEM', 'AI SYSTEM'];
+  const slotName = slots[slotIndex];
+  const mod = MODS.find(m => m.slot === slotName);
+  if (mod) {
+    equipModById(mod.id);
+  }
+}
+
+// Window load init
+window.addEventListener('DOMContentLoaded', () => {
+  initThreeJS();
+  renderInventoryRack();
+  updateLabSlotCards();
+  localStorage.setItem('whatif-theme', 'dark');
+  document.documentElement.setAttribute('data-theme', 'dark');
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderCharacterLab();
+selectCharacter(0, false);
+renderCodexNav();
+</script>
+</body>
+</html>
