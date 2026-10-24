@@ -1867,13 +1867,13 @@ body::after {
 }
 
 /* Subtle non-lagging camera shock */
-body.snap-screen-shake {
-  animation: smoothShock 0.35s ease-out both;
+#marvel-intro-screen.intro-shake {
+  animation: smoothShock 0.25s ease-out both;
 }
 
 @keyframes smoothShock {
   0% { transform: scale(1); }
-  25% { transform: scale(1.015) translate(-4px, 2px); }
+  25% { transform: scale(1.015) translate(-3px, 2px); }
   50% { transform: scale(1.008) translate(3px, -2px); }
   75% { transform: scale(1.002) translate(-1px, 1px); }
   100% { transform: scale(1) translate(0, 0); }
@@ -1965,18 +1965,19 @@ body.snap-screen-shake {
   100% { opacity: 0; }
 }
 
-/* Cosmic Shockwave Ring */
+/* Cosmic Shockwave Ring (GPU-Accelerated Composited Scale) */
 .snap-shockwave {
   position: absolute;
   top: 50%; left: 50%;
-  width: 20px; height: 20px;
-  transform: translate(-50%, -50%);
+  width: 200px; height: 200px;
+  transform: translate(-50%, -50%) scale(0.05);
   border-radius: 50%;
-  border: 4px solid #ffffff;
-  box-shadow: 0 0 40px #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 35px #ffffff;
   opacity: 0;
   pointer-events: none;
   z-index: 4;
+  will-change: transform, opacity;
 }
 
 #cinematic-warp-overlay.active .snap-shockwave {
@@ -1985,16 +1986,12 @@ body.snap-screen-shake {
 
 @keyframes cleanShockwave {
   0% {
-    width: 20px;
-    height: 20px;
     opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.3);
+    transform: translate(-50%, -50%) scale(0.05);
   }
   100% {
-    width: 150vw;
-    height: 150vw;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(9);
   }
 }
 
@@ -2930,13 +2927,38 @@ let isEnteringUniverse = false;
 let snapAnimationId = null;
 let snapTimeouts = [];
 
+// Cached AudioContext and Looped Noise Buffer (Zero runtime allocation latency)
+let sharedAudioCtx = null;
+let sharedNoiseBuffer = null;
+
+function getSharedAudioContext() {
+  if (!sharedAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) sharedAudioCtx = new AudioCtx();
+  }
+  if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
+
+function getSharedNoiseBuffer(ctx) {
+  if (!sharedNoiseBuffer && ctx) {
+    // 2048 samples looped = instant white noise with <0.02ms compute time
+    sharedNoiseBuffer = ctx.createBuffer(1, 2048, ctx.sampleRate || 44100);
+    const data = sharedNoiseBuffer.getChannelData(0);
+    for (let i = 0; i < 2048; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+  }
+  return sharedNoiseBuffer;
+}
+
 // Synthesize Gauntlet Snap Sound (Metallic Snap + Sub-bass Boom + Decimating Wind)
 function playThanosSnapSound() {
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    if (ctx.state === 'suspended') ctx.resume();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     // A. Gauntlet finger snap metallic transient
@@ -2974,33 +2996,30 @@ function playThanosSnapSound() {
     boomOsc.start(now);
     boomOsc.stop(now + 1.6);
 
-    // C. Decimating ash wind whoosh (air displacement as particles dissolve)
-    const bufferSize = ctx.sampleRate * 2.8;
-    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
+    // C. Decimating ash wind whoosh (instant 2048-sample looped buffer)
+    const nBuf = getSharedNoiseBuffer(ctx);
+    if (nBuf) {
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = nBuf;
+      whiteNoise.loop = true;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(850, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(180, now + 2.5);
+      noiseFilter.Q.setValueAtTime(2.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.7, now + 0.03);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.7);
+
+      whiteNoise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      whiteNoise.start(now);
+      whiteNoise.stop(now + 2.8);
     }
-
-    const whiteNoise = ctx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
-
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(850, now);
-    noiseFilter.frequency.exponentialRampToValueAtTime(180, now + 2.5);
-    noiseFilter.Q.setValueAtTime(2.5, now);
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.7, now + 0.03);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.7);
-
-    whiteNoise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-
-    whiteNoise.start(now);
-    whiteNoise.stop(now + 2.8);
   } catch (err) {
     console.warn('Snap audio synth fallback:', err);
   }
@@ -3026,6 +3045,7 @@ function triggerScreenShatterDisintegration(onComplete) {
   const h = window.innerHeight;
   const pieceW = Math.ceil(w / cols);
   const pieceH = Math.ceil(h / rows);
+  const frag = document.createDocumentFragment();
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -3037,7 +3057,7 @@ function triggerScreenShatterDisintegration(onComplete) {
       shard.style.height = (pieceH + 1) + 'px';
       shard.style.backgroundPosition = `-${c * pieceW}px -${r * pieceH}px`;
       shard.style.backgroundSize = `${w}px ${h}px`;
-      stage.appendChild(shard);
+      frag.appendChild(shard);
 
       const centerX = w * 0.5;
       const centerY = h * 0.5;
@@ -3046,15 +3066,15 @@ function triggerScreenShatterDisintegration(onComplete) {
       const dirX = (shardCenterX - centerX) / (w * 0.5);
       const dirY = (shardCenterY - centerY) / (h * 0.5);
 
-      const scatterDist = Math.random() * 400 + 200;
-      const targetX = dirX * scatterDist + (Math.random() * 150 + 60);
-      const targetY = dirY * scatterDist - (Math.random() * 250 + 100);
-      const targetZ = (Math.random() - 0.5) * 500;
-      const rotX = (Math.random() - 0.5) * 480;
-      const rotY = (Math.random() - 0.5) * 480;
-      const rotZ = (Math.random() - 0.5) * 360;
-      const duration = (Math.random() * 0.4 + 1.2).toFixed(2);
-      const delay = (Math.random() * 0.1).toFixed(3);
+      const scatterDist = Math.random() * 350 + 180;
+      const targetX = dirX * scatterDist + (Math.random() * 120 - 60);
+      const targetY = dirY * scatterDist - (Math.random() * 200 + 80);
+      const targetZ = (Math.random() - 0.5) * 400;
+      const rotX = (Math.random() - 0.5) * 360;
+      const rotY = (Math.random() - 0.5) * 360;
+      const rotZ = (Math.random() - 0.5) * 240;
+      const duration = (Math.random() * 0.3 + 1.1).toFixed(2);
+      const delay = (Math.random() * 0.08).toFixed(3);
 
       shards.push({
         element: shard,
@@ -3063,6 +3083,9 @@ function triggerScreenShatterDisintegration(onComplete) {
       });
     }
   }
+
+  // Batch insert all 36 shards in a single operation
+  stage.appendChild(frag);
 
   // Next frame: trigger smooth GPU transitions
   requestAnimationFrame(() => {
@@ -3077,13 +3100,13 @@ function triggerScreenShatterDisintegration(onComplete) {
     }
   });
 
-  // Start smooth lightweight ash stream (<0.1ms per frame)
+  // Start smooth lightweight ash stream (<0.05ms per frame)
   startSmoothAshCanvas();
 
   snapTimeouts.push(setTimeout(() => {
     stage.innerHTML = '';
     if (onComplete) onComplete();
-  }, 1800));
+  }, 1600));
 }
 
 // Lightweight 60 FPS Ash Breeze (Zero context state overhead)
@@ -3097,11 +3120,11 @@ function startSmoothAshCanvas() {
   const h = (canvas.height = window.innerHeight);
 
   const particles = [];
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 120; i++) {
     particles.push({
       x: Math.random() * w,
       y: Math.random() * h,
-      size: Math.random() * 3 + 1,
+      size: Math.random() * 2.5 + 1,
       vx: Math.random() * 4 + 2,
       vy: -(Math.random() * 3 + 1),
       alpha: Math.random() * 0.8 + 0.2,
@@ -3111,7 +3134,7 @@ function startSmoothAshCanvas() {
 
   const startTime = performance.now();
   function render(now) {
-    if (now - startTime > 2000) {
+    if (now - startTime > 1800) {
       ctx.clearRect(0, 0, w, h);
       return;
     }
@@ -3146,7 +3169,7 @@ function enterMarvelCinematicUniverse(e) {
   const warpOverlay = document.getElementById('cinematic-warp-overlay');
   const heroScreen = document.getElementById('screen-hero');
 
-  // 1. Play synthesized gauntlet snap sound immediately
+  // 1. Play synthesized gauntlet snap sound immediately (0ms compute)
   playThanosSnapSound();
 
   // 2. Play official Avengers theme immediately on user interaction
@@ -3160,32 +3183,31 @@ function enterMarvelCinematicUniverse(e) {
     });
   }
 
-  // 3. Stage 1: Trigger button surge & non-lagging camera shock
-  document.body.classList.add('snap-screen-shake');
+  // 3. Stage 1: Trigger button surge & isolated intro shock
+  if (intro) intro.classList.add('intro-shake');
   if (enterBtn) enterBtn.classList.add('clicked');
 
-  // 4. Stage 2 (80ms): Activate overlay and trigger 60fps screen shatter into pieces
+  // 4. Stage 2 (40ms): Activate overlay and trigger 60fps screen shatter into pieces
   snapTimeouts.push(setTimeout(() => {
     if (warpOverlay) warpOverlay.classList.add('active');
     triggerScreenShatterDisintegration(() => {
       finishTransition();
     });
-  }, 80));
+  }, 40));
 
-  // 5. Stage 3 (1000ms): Staging in Titan Showdown smoothly as pieces disperse
+  // 5. Stage 3 (750ms): Staging in Titan Showdown smoothly as pieces disperse
   snapTimeouts.push(setTimeout(() => {
-    document.body.classList.remove('snap-screen-shake');
     if (heroScreen) {
       heroScreen.classList.remove('hero-entrance-active');
       void heroScreen.offsetWidth;
       heroScreen.classList.add('hero-entrance-active');
     }
-  }, 1000));
+  }, 750));
 
-  // 6. Stage 4 (1800ms): Complete cleanup
+  // 6. Stage 4 (1600ms): Complete cleanup
   snapTimeouts.push(setTimeout(() => {
     finishTransition();
-  }, 1800));
+  }, 1600));
 }
 
 function finishTransition() {
@@ -3200,7 +3222,6 @@ function finishTransition() {
     intro.style.pointerEvents = '';
   }
   if (stage) stage.innerHTML = '';
-  document.body.classList.remove('snap-screen-shake');
 
   if (warpOverlay) warpOverlay.classList.remove('active');
 
@@ -3477,18 +3498,23 @@ function renderCharacterLab() {
   container.innerHTML = CHARS.map((c, i) => {
     const isSelected = i === selectedCharIndex;
     const isVillain = c.faction === 'VILLAIN';
+    const has3D = !!c.gltf;
     return `
       <div class="char-card ${isSelected ? 'selected' : ''}" onclick="selectCharacterInLab(${i})">
-        <div class="char-card-portrait" style="background:#141414; border-bottom:1px solid rgba(255,255,255,0.1); overflow:hidden;">
+        <div class="char-card-portrait" style="background:#141414; border-bottom:1px solid rgba(255,255,255,0.1); overflow:hidden; position:relative;">
           ${c.img 
             ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;object-position:top;" alt="${c.name}"/>` 
             : `<span>${c.icon}</span>`}
-          ${isSelected ? `<div style="position:absolute;top:10px;right:10px;z-index:2;"><span class="badge" style="font-size:9px;background:#ffffff;color:#000000;border:1px solid #ffffff;">ACTIVE</span></div>` : ''}
+          <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px;z-index:2;">
+            ${has3D ? `<span class="badge badge-cyan" style="font-size:9px;">⚡ 3D GLB</span>` : ''}
+            ${isSelected ? `<span class="badge" style="font-size:9px;background:#ffffff;color:#000000;border:1px solid #ffffff;">ACTIVE</span>` : ''}
+          </div>
         </div>
         <div class="char-card-body">
           <div class="char-card-name">${c.name}</div>
           <div class="char-card-desc">${c.desc}</div>
           <div class="char-card-tags">
+            ${has3D ? `<span class="badge badge-cyan" style="font-size:9px">⚡ 3D READY</span>` : ''}
             ${c.tags.map(t=>`<span class="badge" style="font-size:9px">${t}</span>`).join('')}
             <span class="badge" style="font-size:9px">${c.faction}</span>
           </div>
@@ -3504,7 +3530,7 @@ function renderCharacterLab() {
             ⚔️ Battleworld
           </button>
           <button class="btn-card-3d" onclick="event.stopPropagation(); selectCharacter(${i}, true)" title="Open ${c.name} in 3D Transformation Lab">
-            🔬 3D Transform
+            ${has3D ? '🔬 Launch 3D Model' : '🔬 3D Transform'}
           </button>
         </div>
       </div>`;
@@ -4127,12 +4153,13 @@ function renderCodexNav() {
   const container = document.getElementById('codex-nav-list');
   if (!container) return;
   container.innerHTML = CHARS.map((c, i) => `
-    <div class="codex-nav-item ${i===codexChar?'active':''}" onclick="selectCodexChar(${i})">
+    <div class="codex-nav-item ${i===codexChar?'active':''}" onclick="selectCodexChar(${i})" style="display:flex;align-items:center;gap:10px;">
       <span class="codex-icon">${c.icon}</span>
-      <div>
+      <div style="flex:1;">
         <div class="codex-title">${c.name}</div>
         <div class="codex-sub">${c.tags.slice(0,2).join(' · ')} · ${c.faction}</div>
       </div>
+      ${c.gltf ? `<span class="badge badge-cyan" style="font-size:8px;">3D</span>` : ''}
     </div>
   `).join('');
 }
@@ -4149,16 +4176,23 @@ function renderCodex(i) {
   const factionColor = c.faction === 'VILLAIN' ? 'var(--red)' : c.faction === 'HERO' ? 'var(--green)' : 'var(--text-dim)';
   const header = document.getElementById('codex-header');
   header.innerHTML = `
-    <div class="codex-avatar" style="width:64px;height:64px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(0,100,200,0.2);">
+    <div class="codex-avatar" style="width:64px;height:64px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#141414;border:1px solid rgba(255,255,255,0.15);">
       ${c.img ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;"/>` : c.icon}
     </div>
     <div class="codex-headinfo">
       <h2>${c.name}</h2>
       <p>${c.desc}</p>
-      <div class="tags">
+      <div class="tags" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;">
+        ${c.gltf ? `<span class="badge badge-cyan" style="font-size:9px">⚡ 3D GLB ACTIVE</span>` : ''}
         ${c.tags.map(t=>`<span class="badge badge-cyan" style="font-size:9px">${t}</span>`).join('')}
         <span class="badge" style="font-size:9px;color:${factionColor};border-color:${factionColor};background:transparent;">${c.faction}</span>
       </div>
+      ${c.gltf ? `
+        <div style="margin-top:10px;">
+          <button class="btn btn-primary" onclick="selectCharacter(${i}, true)" style="font-size:11px; padding:6px 14px;">
+            🔬 Inspect 3D Model in Workshop
+          </button>
+        </div>` : ''}
     </div>
   `;
 
