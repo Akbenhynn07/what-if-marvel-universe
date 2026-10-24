@@ -708,17 +708,65 @@ svg.ring { transform: rotate(-90deg); }
 .eff-delta.down { color: var(--red); }
 
 /* ============================================================
-   TIMELINE EXPLORER
+   TIMELINE EXPLORER — DANGEROUS CRIMSON & VOID BLACK AESTHETIC
 ============================================================ */
+#screen-timeline {
+  background: radial-gradient(circle at 15% 50%, rgba(185, 28, 28, 0.22) 0%, rgba(10, 2, 4, 0.98) 75%), #050102;
+  position: relative;
+  overflow: hidden;
+}
+
+#screen-timeline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(239, 68, 68, 0.5), rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.3), rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 90px 40px, rgba(220, 38, 38, 0.6), rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 160px 160px;
+  opacity: 0.6;
+  animation: voidDrift 45s linear infinite;
+}
+
+@keyframes voidDrift {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-160px); }
+}
+
 #screen-timeline .layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 310px;
   grid-template-rows: 1fr 120px;
   gap: 16px;
   height: calc(100vh - 100px);
+  position: relative;
+  z-index: 2;
 }
-.timeline-graph-panel { grid-column: 1; grid-row: 1; position: relative; overflow: hidden; }
-.timeline-svg-wrap { width: 100%; height: 100%; }
+
+.timeline-graph-panel {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 10% 40%, rgba(127, 29, 29, 0.35) 0%, rgba(6, 2, 4, 0.96) 80%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  box-shadow: 0 0 35px rgba(220, 38, 38, 0.25), inset 0 0 30px rgba(185, 28, 28, 0.15) !important;
+}
+
+.timeline-graph-panel .panel-header {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3) !important;
+  color: #fca5a5 !important;
+}
+
+.timeline-graph-panel .panel-header .dot {
+  background: #ef4444 !important;
+  box-shadow: 0 0 10px #ef4444 !important;
+}
+
+.timeline-svg-wrap { width: 100%; height: 100%; position: relative; }
 #timeline-svg { width: 100%; height: 100%; }
 
 .node-card {
@@ -727,18 +775,51 @@ svg.ring { transform: rotate(-90deg); }
 }
 .node-rect {
   rx: 8; ry: 8;
-  fill: rgba(12,20,40,0.88);
-  stroke: rgba(0,200,255,0.35);
+  fill: rgba(18, 4, 6, 0.94);
+  stroke: rgba(239, 68, 68, 0.45);
   stroke-width: 1.5;
   transition: var(--transition);
 }
-.node-card:hover .node-rect { stroke: var(--cyan); stroke-width: 2; }
-.node-card.active .node-rect { stroke: var(--cyan); stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(0,200,255,0.6)); }
-.node-card.branch-b .node-rect { stroke: rgba(255,140,66,0.5); }
-.node-card.branch-b.active .node-rect { stroke: var(--orange); filter: drop-shadow(0 0 8px rgba(255,140,66,0.6)); }
+.node-card:hover .node-rect {
+  stroke: #ef4444;
+  stroke-width: 2;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+}
+.node-card.active .node-rect {
+  stroke: #ff2222;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.9));
+}
+.node-card.branch-b .node-rect { stroke: rgba(249, 115, 22, 0.6); }
+.node-card.branch-b.active .node-rect { stroke: #ea580c; filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.85)); }
 
-.timeline-detail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; }
-.narrative-panel { grid-column: 1; grid-row: 2; }
+.timeline-detail {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 3, 5, 0.95) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.2) !important;
+}
+
+.timeline-detail .panel-header {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+.narrative-panel {
+  grid-column: 1;
+  grid-row: 2;
+  background: rgba(10, 3, 5, 0.95) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.2) !important;
+}
+
+.narrative-panel .panel-header {
+  border-bottom: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
 
 /* ============================================================
    SIMULATION CHAMBER
@@ -2377,17 +2458,17 @@ body::after {
 }
 
 /* ============================================================
-   LOKI GOD OF STORIES (TIMELINE WEAVER)
+   LOKI GOD OF STORIES (TIMELINE WEAVER — VOID THRONE)
 ============================================================ */
 .loki-timeline-pod {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: linear-gradient(135deg, rgba(2, 44, 34, 0.88) 0%, rgba(6, 20, 15, 0.96) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.45);
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.15);
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(35, 4, 10, 0.95) 0%, rgba(12, 1, 3, 0.98) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.65);
+  box-shadow: 0 0 35px rgba(220, 38, 38, 0.4), inset 0 0 20px rgba(185, 28, 28, 0.25);
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  padding: 12px 18px;
   margin-bottom: 12px;
   position: relative;
   overflow: hidden;
@@ -2395,12 +2476,12 @@ body::after {
 
 .loki-3d-throne-wrap {
   position: relative;
-  width: 118px;
-  height: 118px;
+  width: 140px;
+  height: 140px;
   border-radius: 14px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(1, 15, 10, 0.95) 80%);
-  border: 1.5px solid #10b981;
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.65), inset 0 0 18px rgba(16, 185, 129, 0.25);
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.3) 0%, rgba(10, 1, 3, 0.98) 80%);
+  border: 1.5px solid #ef4444;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.75), inset 0 0 20px rgba(220, 38, 38, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2415,8 +2496,8 @@ body::after {
 }
 
 #loki-3d-canvas {
-  width: 118px;
-  height: 118px;
+  width: 140px;
+  height: 140px;
   display: block;
 }
 
@@ -2425,38 +2506,38 @@ body::after {
   bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(2, 44, 34, 0.9);
-  border: 0.5px solid #34d399;
+  background: rgba(30, 2, 6, 0.92);
+  border: 0.5px solid #ef4444;
   border-radius: 4px;
   font-family: 'Rajdhani', sans-serif;
   font-size: 8px;
   font-weight: 700;
-  color: #34d399;
-  padding: 1px 5px;
+  color: #fca5a5;
+  padding: 1px 6px;
   pointer-events: none;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   white-space: nowrap;
 }
 
 .loki-magic-glow {
   position: absolute;
-  inset: -6px;
+  inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%);
-  animation: lokiAuraPulse 2s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, transparent 70%);
+  animation: lokiAuraPulse 1.8s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes lokiAuraPulse {
-  0%, 100% { transform: scale(0.9); opacity: 0.4; }
-  50% { transform: scale(1.2); opacity: 0.85; }
+  0%, 100% { transform: scale(0.9); opacity: 0.5; }
+  50% { transform: scale(1.25); opacity: 0.95; }
 }
 
 .loki-info-block {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .loki-badge-tag {
@@ -2464,55 +2545,56 @@ body::after {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: #34d399;
+  color: #f87171;
   text-transform: uppercase;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .loki-title-text {
   font-family: 'Rajdhani', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
 }
 
 .loki-quote-text {
   font-size: 11px;
-  color: rgba(167, 243, 208, 0.85);
+  color: rgba(254, 202, 202, 0.88);
   font-style: italic;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .btn-loki-weave {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.45) 100%);
-  border: 1px solid #10b981;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.35) 0%, rgba(153, 27, 27, 0.6) 100%);
+  border: 1px solid #ef4444;
   color: #ffffff;
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   font-size: 11px;
-  letter-spacing: 1px;
-  padding: 6px 12px;
+  letter-spacing: 1.2px;
+  padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
   display: flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 }
 .btn-loki-weave:hover {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5) 0%, rgba(5, 150, 105, 0.7) 100%);
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.6) 0%, rgba(185, 28, 28, 0.85) 100%);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.85);
   transform: translateY(-2px) scale(1.03);
 }
 
 .timeline-strand-pulse {
   stroke-dasharray: 8 4;
-  animation: strandFlow 1.6s linear infinite;
+  animation: strandFlow 1.2s linear infinite;
 }
 
 @keyframes strandFlow {
@@ -2521,11 +2603,11 @@ body::after {
 }
 
 .timeline-loki-thread {
-  stroke: #10b981;
+  stroke: #ef4444;
   stroke-width: 2.2;
-  filter: drop-shadow(0 0 6px #10b981);
+  filter: drop-shadow(0 0 8px #ef4444);
   stroke-dasharray: 6 3;
-  animation: strandFlow 1.2s linear infinite;
+  animation: strandFlow 0.9s linear infinite;
 }
 
 /* Dedicated Cinematic Video Modal Overlay */
@@ -3322,35 +3404,46 @@ body::after {
       </div>
     </div>
 
-    <!-- ===== TIMELINE EXPLORER ===== -->
+    <!-- ===== TIMELINE EXPLORER (DANGEROUS RED & BLACK VOID REALM) ===== -->
     <div id="screen-timeline" class="screen">
       <div class="layout">
         <div class="timeline-graph-panel panel">
-          <div class="panel-header"><span class="dot"></span>Branching Multiverse Yggdrasil — <span class="text-mono" style="font-size:10px;color:var(--text-dim)">Seed #7F3A9C2D</span></div>
-          
-          <!-- Loki God of Stories Interactive Pod -->
-          <div class="loki-timeline-pod" id="loki-timeline-pod">
-            <div class="loki-3d-throne-wrap" id="loki-3d-container" title="Drag to rotate Loki 3D Model">
-              <div class="loki-magic-glow"></div>
-              <canvas id="loki-3d-canvas"></canvas>
-              <div class="loki-3d-badge">3D INTERACTIVE</div>
+          <div class="panel-header">
+            <div>
+              <span class="dot"></span>
+              <span style="font-weight:700; letter-spacing:1px; color:#f87171;">YGGDRASIL MULTIVERSE TREE</span> — <span class="text-mono" style="font-size:10px;color:rgba(248,113,113,0.7)">CONTINUOUS REALITY BRANCHING ACTIVE</span>
             </div>
-            <div class="loki-info-block">
-              <div class="loki-badge-tag">
-                <span>👑 LOKI · GOD OF STORIES</span>
-                <span style="color:var(--text-dim)">·</span>
-                <span style="color:#6ee7b7">CITADEL AT THE END OF TIME</span>
-              </div>
-              <div class="loki-title-text">Yggdrasil Multiverse Weaver</div>
-              <div class="loki-quote-text">“I know what kind of God I need to be. For you. For all of us.”</div>
-            </div>
-            <button class="btn-loki-weave" id="loki-weave-btn" onclick="weaveLokiMultiverseBranch()" title="Weave a new timeline branch with Loki's magic">
-              <span>✦ Weave Multiverse Branch</span>
+            <button class="btn-loki-weave" id="loki-weave-btn" onclick="weaveLokiMultiverseBranch()" title="Weave a new timeline branch with Loki's magic" style="padding:4px 10px; font-size:10px;">
+              <span>✦ Weave Branch</span>
             </button>
           </div>
+          
+          <!-- Split Container: Left Loki Throne Pod + Continuous Branching Canvas -->
+          <div style="display:flex; height:calc(100% - 42px); position:relative;">
+            
+            <!-- Left Side: Loki God of Stories Seated On Void Throne -->
+            <div class="loki-timeline-pod" id="loki-timeline-pod" style="width:230px; min-width:230px; height:100%; margin-bottom:0; border-radius:0; border-top:none; border-bottom:none; border-left:none; border-right:1px solid rgba(239,68,68,0.5); flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:16px 12px; gap:12px; z-index:5;">
+              <div class="loki-3d-throne-wrap" id="loki-3d-container" title="Drag to rotate Loki 3D Model" style="width:140px; height:140px;">
+                <div class="loki-magic-glow"></div>
+                <canvas id="loki-3d-canvas" style="width:140px; height:140px;"></canvas>
+                <div class="loki-3d-badge">3D INTERACTIVE</div>
+              </div>
+              <div class="loki-info-block" style="align-items:center;">
+                <div class="loki-badge-tag" style="justify-content:center;">
+                  <span>👑 LOKI · GOD OF STORIES</span>
+                </div>
+                <div class="loki-title-text" style="font-size:14px;">Master of the Multiverse</div>
+                <div class="loki-quote-text" style="font-size:10.5px; max-width:200px;">“I know what kind of God I need to be. For you. For all of us.”</div>
+              </div>
+              <button class="btn-loki-weave" onclick="weaveLokiMultiverseBranch()" title="Hold the branches of reality together" style="width:100%; justify-content:center; padding:8px 12px; font-size:11px;">
+                <span>✦ Weave New Branch</span>
+              </button>
+            </div>
 
-          <div class="timeline-svg-wrap">
-            <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            <!-- Right Side: SVG Branching Tree with continuous animated pulse strands -->
+            <div class="timeline-svg-wrap" style="flex:1; height:100%; position:relative; overflow:hidden;">
+              <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%;"></svg>
+            </div>
           </div>
         </div>
 
@@ -5263,88 +5356,98 @@ function renderTimeline() {
   let svgContent = `
     <defs>
       <filter id="glow"><feGaussianBlur stdDeviation="3.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <filter id="lokiGlow"><feGaussianBlur stdDeviation="4.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <linearGradient id="lokiStrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/>
-        <stop offset="50%" stop-color="#34d399" stop-opacity="0.85"/>
-        <stop offset="100%" stop-color="#059669" stop-opacity="0.6"/>
+      <filter id="crimsonGlow"><feGaussianBlur stdDeviation="4.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <linearGradient id="crimsonStrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ef4444" stop-opacity="0.95"/>
+        <stop offset="50%" stop-color="#b91c1c" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#450a0a" stop-opacity="0.6"/>
+      </linearGradient>
+      <linearGradient id="activeStrandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#ff2222"/>
+        <stop offset="50%" stop-color="#ef4444"/>
+        <stop offset="100%" stop-color="#991b1b"/>
       </linearGradient>
       <marker id="arrow-a" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,200,255,0.7)"/>
+        <path d="M0,0 L0,6 L6,3 z" fill="#ef4444"/>
       </marker>
       <marker id="arrow-b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,140,66,0.7)"/>
+        <path d="M0,0 L0,6 L6,3 z" fill="#f97316"/>
       </marker>
       <marker id="arrow-loki" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="#10b981"/>
+        <path d="M0,0 L0,6 L6,3 z" fill="#dc2626"/>
       </marker>
     </defs>`;
 
-  // Draw Glowing Yggdrasil Root Strands from Loki's Realm (Top-Left) to Timeline Root & Nodes
+  // 1. Draw Continuous Multiverse Strands branching out from Loki on the Left across the full canvas
   const rootNode = TL_NODES.find(n => n.id === 'root');
-  if (rootNode) {
-    const rx = nx(rootNode);
-    const ry = ny(rootNode);
-    svgContent += `
-      <!-- Loki Yggdrasil Master Strands -->
-      <path d="M12,12 C${rx*0.3},${ry*0.2} ${rx*0.5},${ry*0.7} ${rx},${ry}"
-        fill="none" stroke="url(#lokiStrandGrad)" stroke-width="2.6"
-        stroke-dasharray="10 5" class="timeline-strand-pulse" filter="url(#lokiGlow)"/>
-      <path d="M12,28 C${rx*0.4},${ry*0.4} ${rx*0.6},${ry*0.9} ${rx},${ry+15}"
-        fill="none" stroke="#34d399" stroke-width="1.6" opacity="0.75"
-        stroke-dasharray="6 4" class="timeline-strand-pulse"/>
-    `;
-  }
+  const rx = rootNode ? nx(rootNode) : 100;
+  const ry = rootNode ? ny(rootNode) : 200;
 
-  // Edges
+  svgContent += `
+    <!-- Continuous Loki Master Strands (Branching from Left into Cosmos) -->
+    <path d="M0,${H*0.48} C${rx*0.2},${ry*0.2} ${rx*0.5},${ry*0.7} ${rx},${ry}"
+      fill="none" stroke="url(#crimsonStrandGrad)" stroke-width="3.2"
+      stroke-dasharray="10 5" class="timeline-strand-pulse" filter="url(#crimsonGlow)"/>
+    <path d="M0,${H*0.54} C${rx*0.3},${ry*0.4} ${rx*0.6},${ry*0.9} ${rx},${ry+16}"
+      fill="none" stroke="#ef4444" stroke-width="1.8" opacity="0.8"
+      stroke-dasharray="6 4" class="timeline-strand-pulse"/>
+    <path d="M0,${H*0.42} C${W*0.2},${H*0.1} ${W*0.5},${H*0.05} ${W},${H*0.12}"
+      fill="none" stroke="rgba(239, 68, 68, 0.45)" stroke-width="1.5"
+      stroke-dasharray="12 6" class="timeline-strand-pulse"/>
+    <path d="M0,${H*0.58} C${W*0.2},${H*0.85} ${W*0.55},${H*0.95} ${W},${H*0.88}"
+      fill="none" stroke="rgba(185, 28, 28, 0.4)" stroke-width="1.5"
+      stroke-dasharray="12 6" class="timeline-strand-pulse"/>
+  `;
+
+  // 2. Edges Connecting Timeline Branches
   TL_EDGES.forEach(e => {
     const from = TL_NODES.find(n=>n.id===e.from);
     const to   = TL_NODES.find(n=>n.id===e.to);
     if (!from || !to) return;
     const isLoki = to.branch === 'loki' || from.branch === 'loki';
     const isBranchB = to.branch === 'b';
-    const color = isLoki ? '#10b981' : (isBranchB ? 'rgba(255,140,66,0.65)' : 'rgba(0,200,255,0.65)');
+    const color = isLoki ? '#ef4444' : (isBranchB ? '#f97316' : '#dc2626');
     const marker = isLoki ? 'arrow-loki' : (isBranchB ? 'arrow-b' : 'arrow-a');
     const mid = (nx(from) + nx(to)) / 2;
     
     svgContent += `
       <path d="M${nx(from)+55},${ny(from)} C${mid},${ny(from)} ${mid},${ny(to)} ${nx(to)},${ny(to)}"
-        fill="none" stroke="${color}" stroke-width="${isLoki?2.4:1.8}" stroke-dasharray="${isLoki?'6 3':'8 4'}"
+        fill="none" stroke="${color}" stroke-width="${isLoki?2.5:1.8}" stroke-dasharray="8 4"
         class="timeline-strand-pulse"
-        marker-end="url(#${marker})" filter="${isLoki?'url(#lokiGlow)':''}" />`;
+        marker-end="url(#${marker})" filter="${isLoki?'url(#crimsonGlow)':''}" />`;
   });
 
-  // Nodes
+  // 3. Nodes in Void Red and Black Theme
   TL_NODES.forEach(n => {
     const x = nx(n), y = ny(n);
     const isSelected = n.id === selectedNode;
     const isLoki = n.branch === 'loki';
     const isBranchB = n.branch === 'b';
     
-    let strokeColor = 'rgba(0,200,255,0.4)';
-    if (isLoki) strokeColor = isSelected ? '#34d399' : '#10b981';
-    else if (isBranchB) strokeColor = isSelected ? 'rgba(255,140,66,0.95)' : 'rgba(255,140,66,0.4)';
-    else if (isSelected) strokeColor = 'var(--cyan)';
+    let strokeColor = 'rgba(239,68,68,0.45)';
+    if (isLoki) strokeColor = isSelected ? '#ff2222' : '#dc2626';
+    else if (isBranchB) strokeColor = isSelected ? '#f97316' : 'rgba(249,115,22,0.45)';
+    else if (isSelected) strokeColor = '#ef4444';
 
-    const glowFilter = isSelected ? (isLoki ? 'url(#lokiGlow)' : 'url(#glow)') : '';
+    const glowFilter = isSelected ? 'url(#crimsonGlow)' : '';
 
     svgContent += `
       <g class="node-card ${isSelected?'active':''} ${isBranchB?'branch-b':''} ${isLoki?'branch-loki':''}"
          onclick="selectTimelineNode('${n.id}')" style="cursor:pointer">
         <rect x="${x}" y="${y-22}" width="118" height="46" rx="8" ry="8"
-          fill="${isLoki?'rgba(2,34,26,0.92)':'rgba(8,14,28,0.92)'}" 
+          fill="${isLoki?'rgba(30,3,6,0.95)':(isBranchB?'rgba(25,8,4,0.95)':'rgba(16,2,4,0.95)')}" 
           stroke="${strokeColor}" stroke-width="${isSelected?2.5:1.5}"
           filter="${glowFilter}" />
         <text x="${x+8}" y="${y-7}" font-family="Rajdhani,sans-serif" font-size="11" font-weight="700"
-          fill="${isLoki?'#34d399':(isBranchB?'rgba(255,140,66,0.95)':'rgba(0,200,255,0.95)')}">${n.label}</text>
+          fill="${isLoki?'#fca5a5':(isBranchB?'#fb923c':'#ef4444')}">${n.label}</text>
         <text x="${x+8}" y="${y+9}" font-family="Outfit,sans-serif" font-size="10"
-          fill="${isLoki?'rgba(167,243,208,0.85)':'rgba(180,200,220,0.75)'}">${n.sub}</text>
+          fill="${isLoki?'rgba(254,202,202,0.85)':'rgba(220,180,180,0.75)'}">${n.sub}</text>
         ${n.outcomes.map((o,i) => `
           <rect x="${x+8+(i*54)}" y="${y+17}" width="${Math.min(50,o.length*5+8)}" height="13" rx="6"
-            fill="${isLoki?'rgba(16,185,129,0.2)':(isBranchB?'rgba(255,140,66,0.15)':'rgba(0,200,255,0.15)')}"
-            stroke="${isLoki?'#10b981':(isBranchB?'rgba(255,140,66,0.45)':'rgba(0,200,255,0.4)')}" stroke-width="0.8"/>
+            fill="${isLoki?'rgba(239,68,68,0.25)':(isBranchB?'rgba(249,115,22,0.2)':'rgba(185,28,28,0.2)')}"
+            stroke="${isLoki?'#ef4444':(isBranchB?'#f97316':'#b91c1c')}" stroke-width="0.8"/>
           <text x="${x+12+(i*54)}" y="${y+26}" font-family="Rajdhani,sans-serif" font-size="7" font-weight="700"
-            fill="${isLoki?'#6ee7b7':(isBranchB?'rgba(255,140,66,0.95)':'rgba(0,200,255,0.95)')}">${o}</text>
+            fill="${isLoki?'#fca5a5':(isBranchB?'#fdba74':'#fca5a5')}">${o}</text>
         `).join('')}
       </g>`;
   });
@@ -5354,6 +5457,41 @@ function renderTimeline() {
   renderTimelineDetail(selectedNode);
   renderNarrative(selectedNode);
   initLoki3D();
+  startContinuousTimelineBranching();
+}
+
+// Continuous Branching Background Animator (Branches keep generating and pulsing seamlessly)
+let continuousBranchTimer = null;
+function startContinuousTimelineBranching() {
+  if (continuousBranchTimer) return;
+  continuousBranchTimer = setInterval(() => {
+    const timelineScreen = document.getElementById('screen-timeline');
+    if (!timelineScreen || !timelineScreen.classList.contains('active')) return;
+    
+    // Auto-branch lightweight pulse every 12 seconds if user is idle
+    if (TL_NODES.length < 18) {
+      const parentNode = TL_NODES[Math.floor(Math.random() * TL_NODES.length)];
+      const branchId = `nexus_branch_${Date.now().toString().slice(-4)}`;
+      const randomX = Math.min(580, (parentNode.x || 300) + 90 + Math.random() * 40);
+      const randomY = Math.max(60, Math.min(360, (parentNode.y || 200) + (Math.random() * 80 - 40)));
+      
+      TL_NODES.push({
+        id: branchId,
+        x: randomX,
+        y: randomY,
+        label: `Nexus ${branchId.slice(-3)}`,
+        sub: `Quantum Divergence`,
+        branch: 'loki',
+        outcomes: ['BRANCH'],
+        keyEvents: ['Multiverse reality continuously branches from the Citadel at the End of Time']
+      });
+      TL_EDGES.push({
+        from: parentNode.id,
+        to: branchId
+      });
+      renderTimeline();
+    }
+  }, 9000);
 }
 
 // ============================================================
@@ -5369,12 +5507,13 @@ function initLoki3D() {
   const canvas = document.getElementById('loki-3d-canvas');
   if (!canvas || typeof THREE === 'undefined') return;
   if (lokiRenderer) {
-    // If already initialized, just ensure dimensions are synchronized
+    // Synchronize size if needed
+    lokiRenderer.setSize(140, 140);
     return;
   }
 
-  const w = 118;
-  const h = 118;
+  const w = 140;
+  const h = 140;
 
   lokiScene = new THREE.Scene();
   lokiCamera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
@@ -5388,19 +5527,19 @@ function initLoki3D() {
   lokiRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   lokiRenderer.toneMappingExposure = 1.35;
 
-  // Studio & Celestial Lighting
-  const ambLight = new THREE.AmbientLight(0x064e3b, 1.8);
+  // Dangerous Crimson & Void Ambient Lighting
+  const ambLight = new THREE.AmbientLight(0x450a0a, 2.2);
   lokiScene.add(ambLight);
 
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
   keyLight.position.set(3, 4, 3);
   lokiScene.add(keyLight);
 
-  const emeraldRim = new THREE.DirectionalLight(0x34d399, 2.8);
-  emeraldRim.position.set(-3, 2, -2);
-  lokiScene.add(emeraldRim);
+  const crimsonRim = new THREE.DirectionalLight(0xef4444, 3.5);
+  crimsonRim.position.set(-3, 2, -2);
+  lokiScene.add(crimsonRim);
 
-  const throneLight = new THREE.PointLight(0x10b981, 3.2, 5);
+  const throneLight = new THREE.PointLight(0xdc2626, 3.6, 5);
   throneLight.position.set(0, 0.3, 0.8);
   lokiScene.add(throneLight);
 
