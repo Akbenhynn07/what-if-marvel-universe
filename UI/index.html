@@ -3221,6 +3221,7 @@ const CHARS = [
   {
     id: 'thanos', name: 'Thanos (The Mad Titan)', icon: '💎', img: 'assets/thanos.png',
     loadImg: 'assets/load_infinity_gauntlet.png', loadIcon: '🥊💎', loadEmblem: 'INFINITY GAUNTLET',
+    gltf: 'assets/thanos.glb',
     faction: 'VILLAIN', tags: ['TITAN','INFINITY GAUNTLET','COSMIC'],
     desc: 'Warlord from Titan wielding the Infinity Gauntlet, seeking to reshape cosmic reality through immense power and cold calculation.',
     attrs: { Strength:980, Speed:480, Durability:960, Energy:990, Intelligence:920, Defense:880, Attack:970, Mobility:420 },
@@ -3328,6 +3329,21 @@ const CHARS = [
       {name:'Iron Man', affinity:0.85, type:'Creator/Ally'},
     ],
     maxEnergy:980, energyCapacity:980, maxWeight:850,
+  },
+  {
+    id: 'loki', name: 'Loki (God of Stories)', icon: '👑', img: 'assets/loki_tom_hiddleston.jpg',
+    loadImg: 'assets/loki_tom_hiddleston.jpg', loadIcon: '👑🌲', loadEmblem: 'YGGDRASIL BRANCH WEAVER',
+    gltf: 'assets/loki.glb',
+    faction: 'ANTI-HERO', tags: ['ASGARDIAN','GOD OF STORIES','YGGDRASIL','MAGIC','TIME'],
+    desc: 'The God of Stories seated at the Citadel at the End of Time, weaving and holding the infinite multiverse branches of Yggdrasil together.',
+    attrs: { Strength:710, Speed:810, Durability:870, Energy:995, Intelligence:980, Defense:860, Attack:930, Mobility:890 },
+    personality: { Aggression:0.4, Loyalty:0.9, Recklessness:0.5, Creativity:0.99, 'Self-Preservation':0.3, Altruism:0.95 },
+    relationships: [
+      {name:'Thor Odinson', affinity:0.95, type:'Brother/Ally'},
+      {name:'Iron Man', affinity:0.75, type:'Ally'},
+      {name:'Thanos', affinity:-1.0, type:'Enemy'},
+    ],
+    maxEnergy:995, energyCapacity:995, maxWeight:600,
   }
 ];
 
@@ -5760,6 +5776,8 @@ function buildHero3DMesh(heroId) {
       if (char.id === 'black_panther') targetDim = 2.1;
       else if (char.id === 'thor') targetDim = 2.2;
       else if (char.id === 'hulk') targetDim = 2.3; // Wide muscular build fits canvas with ample breathing room
+      else if (char.id === 'thanos') targetDim = 2.35; // Mad Titan armored physique
+      else if (char.id === 'loki') targetDim = 2.45; // Horned crown & majestic cape silhouette
 
       const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
       const scale = targetDim / maxDim;
@@ -5784,6 +5802,16 @@ function buildHero3DMesh(heroId) {
         const chestLight = new THREE.PointLight(0xffffff, 2.8, 4.5);
         chestLight.position.set(0, 0.25, 0.6);
         wrapper.add(chestLight);
+      } else if (heroId === 'thanos') {
+        // Infinity Gauntlet Cosmic Glow Light
+        const gauntletLight = new THREE.PointLight(0xffd700, 3.2, 5.0);
+        gauntletLight.position.set(-0.6, 0.2, 0.4);
+        wrapper.add(gauntletLight);
+      } else if (heroId === 'loki') {
+        // Loki God of Stories Emerald Yggdrasil Glow
+        const lokiMagicLight = new THREE.PointLight(0x34d399, 3.0, 5.0);
+        lokiMagicLight.position.set(0, 0.3, 0.6);
+        wrapper.add(lokiMagicLight);
       }
 
       heroGroup.add(wrapper);
