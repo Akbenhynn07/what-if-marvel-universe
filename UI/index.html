@@ -2353,12 +2353,12 @@ body::after {
 
 .loki-3d-throne-wrap {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 118px;
+  height: 118px;
   border-radius: 14px;
   background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(1, 15, 10, 0.95) 80%);
   border: 1.5px solid #10b981;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.55), inset 0 0 15px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.65), inset 0 0 18px rgba(16, 185, 129, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2373,24 +2373,24 @@ body::after {
 }
 
 #loki-3d-canvas {
-  width: 90px;
-  height: 90px;
+  width: 118px;
+  height: 118px;
   display: block;
 }
 
 .loki-3d-badge {
   position: absolute;
-  bottom: 3px;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(2, 44, 34, 0.85);
+  background: rgba(2, 44, 34, 0.9);
   border: 0.5px solid #34d399;
   border-radius: 4px;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 7.5px;
+  font-size: 8px;
   font-weight: 700;
   color: #34d399;
-  padding: 1px 4px;
+  padding: 1px 5px;
   pointer-events: none;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -4849,13 +4849,13 @@ function initLoki3D() {
     return;
   }
 
-  const w = 90;
-  const h = 90;
+  const w = 118;
+  const h = 118;
 
   lokiScene = new THREE.Scene();
-  lokiCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-  lokiCamera.position.set(0, 0.45, 3.4);
-  lokiCamera.lookAt(0, 0.2, 0);
+  lokiCamera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+  lokiCamera.position.set(0, 0.25, 2.7);
+  lokiCamera.lookAt(0, 0.15, 0);
 
   lokiRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
   lokiRenderer.setSize(w, h);
@@ -4963,229 +4963,110 @@ function initLoki3D() {
 
 function buildLokiSittingModel(group) {
   // PBR Materials
-  const blackSuitMat = new THREE.MeshStandardMaterial({
-    color: 0x11161d,
-    roughness: 0.45,
-    metalness: 0.35
-  });
-  const emeraldMat = new THREE.MeshStandardMaterial({
-    color: 0x064e3b,
-    roughness: 0.3,
-    metalness: 0.5,
-    emissive: 0x022c22,
-    emissiveIntensity: 0.35
-  });
-  const goldCrownMat = new THREE.MeshStandardMaterial({
-    color: 0xf59e0b,
-    roughness: 0.18,
-    metalness: 0.95,
-    emissive: 0xb45309,
-    emissiveIntensity: 0.25
-  });
-  const fleshMat = new THREE.MeshStandardMaterial({
-    color: 0xf9d5b8,
-    roughness: 0.6,
-    metalness: 0.05
-  });
-  const darkHairMat = new THREE.MeshStandardMaterial({
-    color: 0x07090e,
-    roughness: 0.75,
-    metalness: 0.1
+  const throneStoneMat = new THREE.MeshStandardMaterial({
+    color: 0x161a22,
+    roughness: 0.85,
+    metalness: 0.3
   });
   const magicGlowMat = new THREE.MeshBasicMaterial({
     color: 0x34d399,
     transparent: true,
-    opacity: 0.85
+    opacity: 0.95
   });
-  const throneStoneMat = new THREE.MeshStandardMaterial({
-    color: 0x1f242d,
-    roughness: 0.8,
-    metalness: 0.25
+  const goldCrownMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    roughness: 0.2,
+    metalness: 0.95,
+    emissive: 0xb45309,
+    emissiveIntensity: 0.3
   });
 
-  // 1. Throne of Eternity (Citadel at the End of Time)
+  // 1. Throne of Eternity Pedestal & Citadel Backrest
   const throneBase = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 0.25, 1.1),
+    new THREE.BoxGeometry(1.4, 0.22, 1.2),
     throneStoneMat
   );
-  throneBase.position.set(0, -0.65, 0);
+  throneBase.position.set(0, -0.68, 0);
   group.add(throneBase);
 
   const throneBack = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 1.4, 0.18),
+    new THREE.BoxGeometry(1.2, 1.6, 0.16),
     throneStoneMat
   );
-  throneBack.position.set(0, 0.1, -0.45);
+  throneBack.position.set(0, 0.15, -0.32);
   group.add(throneBack);
 
-  // Throne Rune Accents (Glowing Emerald)
+  // Throne Rune Inscription Bar
   const runeBar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.85, 0.04, 0.02),
+    new THREE.BoxGeometry(0.95, 0.04, 0.03),
     magicGlowMat
   );
-  runeBar.position.set(0, 0.65, -0.35);
+  runeBar.position.set(0, 0.78, -0.22);
   group.add(runeBar);
 
-  // 2. Seated Torso (Black and Forest Green Tunic)
-  const torso = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.28, 0.65, 16),
-    blackSuitMat
-  );
-  torso.position.set(0, -0.1, 0);
-  group.add(torso);
+  // 2. Photorealistic Tom Hiddleston (Loki God of Stories) 3D Parallax PBR Mesh
+  const texLoader = new THREE.TextureLoader();
+  const lokiColorTex = texLoader.load('assets/loki_tom_hiddleston.jpg');
+  const lokiDepthTex = texLoader.load('assets/loki_depth.png');
 
-  // Emerald Chest Vest & Draped Scarf
-  const vest = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.29, 0.42, 16, 1, false, 0, Math.PI * 1.3),
-    emeraldMat
-  );
-  vest.position.set(0, -0.05, 0.01);
-  vest.rotation.y = -Math.PI * 0.65;
-  group.add(vest);
+  // Subdivided curved 3D plane with realistic depth displacement
+  const lokiPlaneGeo = new THREE.PlaneGeometry(1.35, 1.58, 64, 64);
+  const lokiPlaneMat = new THREE.MeshStandardMaterial({
+    map: lokiColorTex,
+    displacementMap: lokiDepthTex,
+    displacementScale: 0.24,
+    displacementBias: -0.04,
+    roughness: 0.45,
+    metalness: 0.2,
+    side: THREE.DoubleSide
+  });
 
-  // Gilded Belt with Asgardian Clasp
-  const belt = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.285, 0.285, 0.06, 16),
-    goldCrownMat
-  );
-  belt.position.set(0, -0.36, 0);
-  group.add(belt);
+  const lokiMesh = new THREE.Mesh(lokiPlaneGeo, lokiPlaneMat);
+  lokiMesh.position.set(0, 0.12, 0.04);
+  group.add(lokiMesh);
 
-  // 3. Seated Cross-Legged Lower Body
-  const leftThigh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.11, 0.52, 12),
-    blackSuitMat
-  );
-  leftThigh.rotation.z = Math.PI / 2.3;
-  leftThigh.rotation.y = -0.35;
-  leftThigh.position.set(-0.3, -0.48, 0.18);
-  group.add(leftThigh);
-
-  const rightThigh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.11, 0.52, 12),
-    blackSuitMat
-  );
-  rightThigh.rotation.z = -Math.PI / 2.3;
-  rightThigh.rotation.y = 0.35;
-  rightThigh.position.set(0.3, -0.48, 0.18);
-  group.add(rightThigh);
-
-  const crossLegs = new THREE.Mesh(
-    new THREE.TorusGeometry(0.38, 0.1, 10, 24, Math.PI),
-    blackSuitMat
-  );
-  crossLegs.rotation.x = Math.PI / 2;
-  crossLegs.rotation.z = Math.PI;
-  crossLegs.position.set(0, -0.56, 0.26);
-  group.add(crossLegs);
-
-  // 4. Arms Holding Glowing Multiverse Timeline Strands
-  // Left Arm (Outstretched forward with hands cupped)
-  const armL = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.07, 0.46, 12),
-    blackSuitMat
-  );
-  armL.rotation.z = Math.PI / 3.4;
-  armL.rotation.x = 0.4;
-  armL.position.set(-0.34, 0.02, 0.22);
-  group.add(armL);
-
-  const handL = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 12, 12),
-    fleshMat
-  );
-  handL.position.set(-0.48, 0.12, 0.38);
-  group.add(handL);
-
-  // Right Arm (Outstretched forward holding branches)
-  const armR = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.07, 0.46, 12),
-    blackSuitMat
-  );
-  armR.rotation.z = -Math.PI / 3.4;
-  armR.rotation.x = 0.4;
-  armR.position.set(0.34, 0.02, 0.22);
-  group.add(armR);
-
-  const handR = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 12, 12),
-    fleshMat
-  );
-  handR.position.set(0.48, 0.12, 0.38);
-  group.add(handR);
-
-  // 5. Glowing Multiverse Yggdrasil Strands Emanating from Loki's Hands
-  const strandL = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.022, 12, 24),
-    magicGlowMat
-  );
-  strandL.position.set(-0.48, 0.12, 0.38);
-  strandL.rotation.y = 0.5;
-  group.add(strandL);
-
-  const strandR = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.022, 12, 24),
-    magicGlowMat
-  );
-  strandR.position.set(0.48, 0.12, 0.38);
-  strandR.rotation.y = -0.5;
-  group.add(strandR);
-
-  // 6. Head, Long Dark Flowing Hair & Majestic Horned Crown
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 20, 20),
-    fleshMat
-  );
-  head.position.set(0, 0.44, 0.05);
-  group.add(head);
-
-  // Long flow of dark hair draping back
-  const hair = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.24, 0.45, 14),
-    darkHairMat
-  );
-  hair.position.set(0, 0.34, -0.06);
-  group.add(hair);
-
-  // Golden Crown Circlet
-  const crownRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.19, 0.035, 14, 24),
-    goldCrownMat
-  );
-  crownRing.position.set(0, 0.48, 0.06);
-  crownRing.rotation.x = Math.PI / 2.3;
-  group.add(crownRing);
-
-  // Majestic Swept Horns (God of Stories / King of Yggdrasil)
-  // Left Horn
+  // 3. Swept 3D Gilded Horns (God of Stories Crown Accents)
   const hornCurveL = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.16, 0.52, 0.06),
-    new THREE.Vector3(-0.35, 0.72, 0.02),
-    new THREE.Vector3(-0.44, 0.95, -0.08),
-    new THREE.Vector3(-0.32, 1.15, -0.16)
+    new THREE.Vector3(-0.14, 0.58, 0.08),
+    new THREE.Vector3(-0.32, 0.78, 0.04),
+    new THREE.Vector3(-0.38, 0.98, -0.05),
+    new THREE.Vector3(-0.26, 1.16, -0.12)
   ]);
-  const hornGeoL = new THREE.TubeGeometry(hornCurveL, 20, 0.038, 8, false);
+  const hornGeoL = new THREE.TubeGeometry(hornCurveL, 20, 0.032, 8, false);
   const hornL = new THREE.Mesh(hornGeoL, goldCrownMat);
   group.add(hornL);
 
-  // Right Horn
   const hornCurveR = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.16, 0.52, 0.06),
-    new THREE.Vector3(0.35, 0.72, 0.02),
-    new THREE.Vector3(0.44, 0.95, -0.08),
-    new THREE.Vector3(0.32, 1.15, -0.16)
+    new THREE.Vector3(0.14, 0.58, 0.08),
+    new THREE.Vector3(0.32, 0.78, 0.04),
+    new THREE.Vector3(0.38, 0.98, -0.05),
+    new THREE.Vector3(0.26, 1.16, -0.12)
   ]);
-  const hornGeoR = new THREE.TubeGeometry(hornCurveR, 20, 0.038, 8, false);
+  const hornGeoR = new THREE.TubeGeometry(hornCurveR, 20, 0.032, 8, false);
   const hornR = new THREE.Mesh(hornGeoR, goldCrownMat);
   group.add(hornR);
 
-  // Gentle Emerald Heart Core / Story Magic in Chest
-  const chestOrb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 12, 12),
+  // 4. Glowing 3D Multiverse Yggdrasil Timeline Weave Strands
+  const strandL = new THREE.Mesh(
+    new THREE.TorusGeometry(0.24, 0.024, 12, 24),
     magicGlowMat
   );
-  chestOrb.position.set(0, 0.08, 0.24);
-  group.add(chestOrb);
+  strandL.position.set(-0.46, 0.04, 0.28);
+  strandL.rotation.y = 0.6;
+  group.add(strandL);
+
+  const strandR = new THREE.Mesh(
+    new THREE.TorusGeometry(0.24, 0.024, 12, 24),
+    magicGlowMat
+  );
+  strandR.position.set(0.46, 0.04, 0.28);
+  strandR.rotation.y = -0.6;
+  group.add(strandR);
+
+  // Dynamic Point Light illuminating Tom Hiddleston's face and hands
+  const magicLight = new THREE.PointLight(0x34d399, 2.5, 3.5);
+  magicLight.position.set(0, 0.25, 0.7);
+  group.add(magicLight);
 }
 
 function animateLoki3D() {
