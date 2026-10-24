@@ -1023,8 +1023,7 @@ svg.ring { transform: rotate(-90deg); }
   width: 100vw;
   height: 100vh;
   z-index: 999999;
-  background-color: #080808;
-  background-image: url('assets/marvel_intro_bg_hd.png');
+  background-color: #000000;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -1032,10 +1031,57 @@ svg.ring { transform: rotate(-90deg); }
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 64px;
+  padding-bottom: 54px;
   cursor: pointer;
   box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
   transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1), transform 0.85s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.85s;
+  overflow: hidden;
+}
+
+#marvel-intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  background: #000;
+  transition: opacity 1.2s ease-in-out;
+}
+
+#marvel-intro-video.video-faded {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-skip-btn {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 20;
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 8px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.intro-skip-btn:hover {
+  background: rgba(237, 29, 36, 0.85);
+  border-color: #ed1d24;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(237, 29, 36, 0.7);
 }
 
 #marvel-intro-screen.dismissed {
@@ -2524,9 +2570,19 @@ body::after {
 <!-- ======= GLOBAL BACKGROUND AUDIO: MARVEL AVENGERS THEME ======= -->
 <audio id="avengers-audio" loop preload="auto" src="assets/avengers_official_theme.mp3"></audio>
 
-<!-- ======= FIRST SCREEN: FULL-SCREEN MARVEL LOGO SPLASH ======= -->
-<div id="marvel-intro-screen" onclick="enterMarvelCinematicUniverse(event)">
-  <div class="marvel-intro-enter-container">
+<!-- ======= FIRST SCREEN: FULL-SCREEN MARVEL LOGO SPLASH & INTRO VIDEO ======= -->
+<div id="marvel-intro-screen">
+  <!-- Marvel Studios Cinematic Intro Video -->
+  <video id="marvel-intro-video" playsinline preload="auto">
+    <source src="assets/marvel_intro.mp4" type="video/mp4">
+  </video>
+
+  <!-- Skip Video Button -->
+  <button class="intro-skip-btn" id="intro-skip-btn" onclick="skipMarvelIntroVideo(event)" title="Skip intro video">
+    <span>SKIP INTRO</span> ❯❯
+  </button>
+
+  <div class="marvel-intro-enter-container" id="marvel-enter-container">
     <div class="marvel-intro-enter-btn" id="marvel-enter-btn" onclick="enterMarvelCinematicUniverse(event)">
       <span class="enter-text">enter the Marvel Cinematic Universe - where you are the boss</span>
       <span class="enter-subtext">CLICK ANYWHERE TO ENTER · 🔊 AVENGERS THEME</span>
@@ -3648,6 +3704,12 @@ function enterMarvelCinematicUniverse(e) {
   const enterBtn = document.getElementById('marvel-enter-btn');
   const warpOverlay = document.getElementById('cinematic-warp-overlay');
   const heroScreen = document.getElementById('screen-hero');
+  const video = document.getElementById('marvel-intro-video');
+
+  // Pause video if still playing
+  if (video) {
+    try { video.pause(); } catch(err){}
+  }
 
   const clickX = e && e.clientX ? e.clientX : window.innerWidth * 0.5;
   const clickY = e && e.clientY ? e.clientY : window.innerHeight * 0.82;
@@ -3693,11 +3755,30 @@ function enterMarvelCinematicUniverse(e) {
   }, 3800));
 }
 
+function skipMarvelIntroVideo(e) {
+  if (e) e.stopPropagation();
+  const video = document.getElementById('marvel-intro-video');
+  const skipBtn = document.getElementById('intro-skip-btn');
+  if (video) {
+    try { video.pause(); } catch(err){}
+    video.classList.add('video-faded');
+  }
+  if (skipBtn) skipBtn.style.display = 'none';
+
+  // Fade in the Marvel Universe Enter button & trigger universe flow
+  enterMarvelCinematicUniverse(e);
+}
+
 function finishTransition() {
   const intro = document.getElementById('marvel-intro-screen');
   const warpOverlay = document.getElementById('cinematic-warp-overlay');
   const heroScreen = document.getElementById('screen-hero');
   const stage = document.getElementById('screen-shatter-stage');
+  const video = document.getElementById('marvel-intro-video');
+
+  if (video) {
+    try { video.pause(); } catch(err){}
+  }
 
   if (intro) {
     intro.classList.add('dismissed');
@@ -3741,15 +3822,28 @@ function showMarvelIntro() {
   const warpOverlay = document.getElementById('cinematic-warp-overlay');
   const heroScreen = document.getElementById('screen-hero');
   const stage = document.getElementById('screen-shatter-stage');
+  const video = document.getElementById('marvel-intro-video');
+  const skipBtn = document.getElementById('intro-skip-btn');
 
   document.body.classList.remove('snap-screen-shake');
+
+  if (video) {
+    video.classList.remove('video-faded');
+    video.currentTime = 0;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn("Video replay permission required:", err);
+      });
+    }
+  }
+
+  if (skipBtn) skipBtn.style.display = '';
 
   if (intro) {
     intro.classList.remove('dismissed', 'snap-disintegrating', 'warping', 'intro-shake');
     intro.style.opacity = '';
     intro.style.pointerEvents = '';
-    intro.style.backgroundImage = '';
-    intro.style.backgroundColor = '';
     const enterContainer = intro.querySelector('.marvel-intro-enter-container');
     if (enterContainer) {
       enterContainer.style.opacity = '';
@@ -3772,6 +3866,30 @@ function showMarvelIntro() {
   }
 
   isEnteringUniverse = false;
+}
+
+// Setup Marvel Intro Video Auto-Play & Transition to Usual Flow
+function setupMarvelIntroVideo() {
+  const video = document.getElementById('marvel-intro-video');
+  const skipBtn = document.getElementById('intro-skip-btn');
+  if (!video) return;
+
+  // When video naturally ends, seamlessly fade video and start usual universe transition
+  video.addEventListener('ended', () => {
+    video.classList.add('video-faded');
+    if (skipBtn) skipBtn.style.display = 'none';
+    enterMarvelCinematicUniverse();
+  });
+
+  // Attempt autoplay on page load
+  const playPromise = video.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      // Browser blocked autoplay with audio — mute temporarily so video begins immediately
+      video.muted = true;
+      video.play().catch(e => console.warn("Video autoplay blocked:", e));
+    });
+  }
 }
 
 // ============================================================
@@ -6054,6 +6172,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updateLabSlotCards();
   initBattlefieldArena();
   renderTimeline();
+  setupMarvelIntroVideo();
   localStorage.setItem('whatif-theme', 'dark');
   document.documentElement.setAttribute('data-theme', 'dark');
 });
