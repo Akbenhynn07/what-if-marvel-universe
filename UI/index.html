@@ -2641,6 +2641,82 @@ body::after {
   box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
   transform: translateY(-2px);
 }
+
+/* In-Engine Right-Side Video Poster Dock */
+.editor-video-poster-dock {
+  background: rgba(8, 12, 22, 0.95);
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 200, 255, 0.25);
+  margin-bottom: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.editor-video-poster-dock.highlight-pulse {
+  border-color: #00e5ff;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.6), 0 0 15px #00e5ff;
+}
+
+.poster-dock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(14, 22, 38, 0.9);
+  border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+.poster-dock-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poster-dock-badge {
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid #ef4444;
+  color: #fff;
+  font-weight: bold;
+}
+
+.poster-dock-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+.poster-dock-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.poster-dock-controls {
+  padding: 6px 10px;
+  background: rgba(6, 10, 18, 0.85);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.poster-dock-status {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+}
 </style>
 </head>
 <body>
@@ -2761,10 +2837,12 @@ body::after {
     <!-- ===== OPENING HERO SECTION: IRON MAN WITH THANOS SHOWDOWN ===== -->
     <div id="screen-hero" class="screen active">
 
-      <!-- MAIN HERO STAGE: IRON MAN & THANOS TITAN SHOWDOWN -->
+      <!-- MAIN HERO STAGE: IRON MAN & THANOS TITAN SHOWDOWN (VIDEO) -->
       <div class="hero-cinematic-stage">
-        <div class="hero-img-container titan-container" onclick="playIronManVsThanosVideo(event)" style="cursor:pointer;" title="Click to Watch: Iron-Man vs Thanos Edit [Bloody Mary]">
-          <img src="assets/ironman_thanos_hd.png" alt="Thanos and Iron Man Confrontation on Titan" class="hero-main-img titan-img"/>
+        <div class="hero-img-container titan-container" onclick="playIronManVsThanosVideo(event)" style="cursor:pointer;" title="Click to Watch in Cinema Player: Iron-Man vs Thanos Edit [Bloody Mary]">
+          <video class="hero-main-img titan-img" autoplay loop muted playsinline preload="auto" poster="assets/ironman_thanos_hd.png" style="width:100%; height:auto; display:block; object-fit:cover;">
+            <source src="assets/int.mp4" type="video/mp4">
+          </video>
           <div class="hero-vignette-overlay titan-vignette"></div>
           <div class="titan-dust-glow"></div>
 
@@ -2778,7 +2856,7 @@ body::after {
           <!-- Scene Stamp -->
           <div class="hero-scene-stamp">
             <span class="stamp-badge">AVENGERS: INFINITY WAR / ENDGAME NEXUS</span>
-            <span class="stamp-text">THE BATTLE OF TITAN · IRON MAN MARK L vs THANOS · [CLICK TO PLAY 4K EDIT]</span>
+            <span class="stamp-text">THE BATTLE OF TITAN · IRON MAN MARK L vs THANOS · [INT.MP4 CINEMATIC ACTIVE]</span>
           </div>
         </div>
 
@@ -2984,8 +3062,35 @@ body::after {
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: Weapon Systems & Tactical AI -->
+        <!-- RIGHT COLUMN: Weapon Systems, Video Poster Dock & Tactical AI -->
         <div class="lab-col lab-right-col">
+
+          <!-- IN-ENGINE RIGHT-SIDE CINEMATIC POSTER DOCK -->
+          <div class="editor-video-poster-dock" id="editor-poster-dock">
+            <div class="poster-dock-header">
+              <div class="poster-dock-title">
+                <span>🎬</span> <span id="dock-video-title">IRON MAN · 4K EDIT</span>
+              </div>
+              <span class="poster-dock-badge" id="dock-video-badge">4K POSTER</span>
+            </div>
+            <div class="poster-dock-video-wrap">
+              <video id="editor-dock-video" loop playsinline preload="auto" poster="assets/ironman.png" style="width:100%; height:100%; object-fit:cover;">
+                <source id="editor-dock-video-source" src="assets/iron_man_privatized_world_peace.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="poster-dock-controls">
+              <span class="poster-dock-status" id="dock-status-txt">READY · CLICK TO PLAY</span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-card-cinematic" onclick="toggleDockVideoPlay()" id="dock-play-btn" style="padding:4px 8px; font-size:10px;">
+                  ▶ Play
+                </button>
+                <button class="btn-card-bw" onclick="expandDockVideoToModal()" style="padding:4px 8px; font-size:10px;" title="Maximize to Full Cinema Player">
+                  ⛶ Max
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- TOP RIGHT: Weapon System Slot -->
           <div class="mod-slot-card panel" id="slot-card-1" onclick="selectModSlot(1)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'plasma_cannon')">
             <div class="slot-header">
@@ -4106,12 +4211,80 @@ function closeCinematicVideo(e) {
 
 function playIronManPrivatizedWorldPeaceVideo(e) {
   if (e) e.stopPropagation();
-  openCinematicVideo('assets/iron_man_privatized_world_peace.mp4', 'IRON MAN · PRIVATIZED WORLD PEACE [4K EDIT]');
+  // 1. Select Iron Man (index 0)
+  selectCharacter(0, false);
+  // 2. Seamlessly navigate into Transformation Editor suite
+  switchTab('editor');
+  // 3. Play video directly as rectangular poster dock in the right column
+  playInDockVideo('assets/iron_man_privatized_world_peace.mp4', 'IRON MAN · PRIVATIZED WORLD PEACE [4K]', true);
 }
 
 function playIronManVsThanosVideo(e) {
   if (e) e.stopPropagation();
   openCinematicVideo('assets/iron_man_vs_thanos_edit.mp4', 'IRON MAN vs THANOS · BLOODY MARY ATTITUDE [4K EDIT]');
+}
+
+// In-Engine Right-Side Video Poster Dock Controllers
+let currentDockSrc = 'assets/iron_man_privatized_world_peace.mp4';
+let currentDockTitle = 'IRON MAN · PRIVATIZED WORLD PEACE [4K]';
+
+function playInDockVideo(src, title, autoPlay = true) {
+  const dock = document.getElementById('editor-poster-dock');
+  const video = document.getElementById('editor-dock-video');
+  const source = document.getElementById('editor-dock-video-source');
+  const titleEl = document.getElementById('dock-video-title');
+  const statusEl = document.getElementById('dock-status-txt');
+  const playBtn = document.getElementById('dock-play-btn');
+
+  if (!dock || !video || !source) return;
+
+  currentDockSrc = src;
+  currentDockTitle = title || '4K CINEMATIC EDIT';
+
+  if (titleEl) titleEl.textContent = currentDockTitle;
+  source.src = src;
+  video.load();
+
+  dock.classList.add('highlight-pulse');
+  setTimeout(() => dock.classList.remove('highlight-pulse'), 1400);
+
+  if (autoPlay) {
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        if (statusEl) statusEl.textContent = 'PLAYING 4K EDIT';
+        if (playBtn) playBtn.textContent = '⏸ Pause';
+      }).catch(err => {
+        console.warn("Dock video autoplay permission required:", err);
+        if (statusEl) statusEl.textContent = 'CLICK PLAY TO WATCH';
+        if (playBtn) playBtn.textContent = '▶ Play';
+      });
+    }
+  }
+}
+
+function toggleDockVideoPlay() {
+  const video = document.getElementById('editor-dock-video');
+  const statusEl = document.getElementById('dock-status-txt');
+  const playBtn = document.getElementById('dock-play-btn');
+  if (!video) return;
+
+  if (video.paused) {
+    video.play().then(() => {
+      if (statusEl) statusEl.textContent = 'PLAYING 4K EDIT';
+      if (playBtn) playBtn.textContent = '⏸ Pause';
+    }).catch(e => console.warn(e));
+  } else {
+    video.pause();
+    if (statusEl) statusEl.textContent = 'PAUSED';
+    if (playBtn) playBtn.textContent = '▶ Play';
+  }
+}
+
+function expandDockVideoToModal() {
+  const video = document.getElementById('editor-dock-video');
+  if (video) video.pause();
+  openCinematicVideo(currentDockSrc, currentDockTitle);
 }
 
 // ============================================================
