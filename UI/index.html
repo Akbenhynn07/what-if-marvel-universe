@@ -5108,9 +5108,10 @@ function initThreeJS() {
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  // Camera
+  // Camera - Perfectly aligned at center (0, 0, 0)
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-  camera.position.set(0, 1.2, 5.5);
+  camera.position.set(0, 0, 4.8);
+  camera.lookAt(0, 0, 0);
 
   // Renderer
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
@@ -5179,6 +5180,14 @@ function initThreeJS() {
   canvas.addEventListener('click', onCanvas3DClick);
   canvas.addEventListener('mousemove', onCanvas3DHover);
 
+  // Mouse Wheel Zoom
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (!camera) return;
+    camera.position.z += e.deltaY * 0.003;
+    camera.position.z = Math.max(2.4, Math.min(8.0, camera.position.z));
+  }, { passive: false });
+
   // Mouse & Touch Drag Rotation Controls
   canvas.addEventListener('mousedown', (e) => {
     isDragging3D = true;
@@ -5216,20 +5225,20 @@ function getHitSlot(intersect) {
       name: intersect.object.userData.slotName || 'COMPONENT'
     };
   }
-  // Spatial fallback on 3D hit point
+  // Spatial fallback on 3D hit point (aligned to centered model bounds: Y from -1.2 to +1.2)
   if (!intersect || !intersect.point) return { index: 2, name: 'POWER SOURCE' };
   const pt = intersect.point;
-  if (pt.y > 1.8) {
+  if (pt.y > 0.65) {
     return { index: 5, name: 'AI SYSTEM' }; // Head / Helmet
-  } else if (pt.y > 0.7) {
-    if (Math.abs(pt.x) < 0.38) {
+  } else if (pt.y > 0.15) {
+    if (Math.abs(pt.x) < 0.35) {
       return { index: 2, name: 'POWER SOURCE' }; // Arc Reactor / Chest Core
-    } else if (pt.x > 0.38) {
+    } else if (pt.x > 0.35) {
       return { index: 1, name: 'WEAPON SYSTEM' }; // Right Arm
     } else {
       return { index: 3, name: 'DEFENSE SYSTEM' }; // Left Arm
     }
-  } else if (pt.y > 0.1) {
+  } else if (pt.y > -0.35) {
     return { index: 0, name: 'ARMOR LAYER' }; // Torso / Armor Layer
   } else {
     return { index: 4, name: 'MOBILITY SYSTEM' }; // Legs / Thrusters
@@ -5363,24 +5372,14 @@ function buildHero3DMesh(heroId) {
     loader.load(char.gltf, (gltf) => {
       const model = gltf.scene;
 
-      // Calculate bounding box to normalize scale and center position
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
+      // 1. Force recursive update of world matrix on loaded hierarchy
+      model.updateMatrixWorld(true);
 
-      const targetHeight = 3.6;
-      const scale = targetHeight / (size.y || 1);
-      model.scale.set(scale, scale, scale);
-
-      // Recalculate after scaling to position precisely on pedestal
-      const scaledBox = new THREE.Box3().setFromObject(model);
-      const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-
-      model.position.x = -scaledCenter.x;
-      model.position.y = -scaledBox.min.y - 0.85; // Align feet with pedestal ring
-      model.position.z = -scaledCenter.z;
-
+      // 2. Compute accurate bounding box across all visible geometry meshes
+      const box = new THREE.Box3();
+      box.makeEmpty();
       model.traverse((node) => {
-        if (node.isMesh) {
+        if (node.isMesh && node.geometry) {
           node.castShadow = true;
           node.receiveShadow = true;
           if (node.material) {
@@ -5390,10 +5389,38 @@ function buildHero3DMesh(heroId) {
               node.material.roughness = Math.min(node.material.roughness, 0.45);
             }
           }
+          if (!node.geometry.boundingBox) node.geometry.computeBoundingBox();
+          const gBox = node.geometry.boundingBox.clone();
+          gBox.applyMatrix4(node.matrixWorld);
+          box.union(gBox);
         }
       });
 
-      // Play animation if included in 3D model
+      if (box.isEmpty()) {
+        box.setFromObject(model);
+      }
+
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      // 3. Determine ideal target height / dimension for this hero
+      let targetDim = 2.4;
+      if (char.id === 'black_panther') targetDim = 2.1;
+      else if (char.id === 'thor') targetDim = 2.2;
+      else if (char.id === 'hulk') targetDim = 2.3; // Wide muscular build fits canvas with ample breathing room
+
+      const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
+      const scale = targetDim / maxDim;
+
+      // 4. Wrap model in an auto-centering container
+      const wrapper = new THREE.Group();
+      // Center the raw model to (0,0,0) by offsetting by its geometric center
+      model.position.set(-center.x, -center.y, -center.z);
+      wrapper.add(model);
+      wrapper.scale.set(scale, scale, scale);
+      wrapper.position.set(0, 0, 0);
+
+      // 5. Play animation if included in 3D model
       if (gltf.animations && gltf.animations.length > 0) {
         mixer = new THREE.AnimationMixer(model);
         const action = mixer.clipAction(gltf.animations[0]);
@@ -5403,13 +5430,19 @@ function buildHero3DMesh(heroId) {
       // Add dynamic glowing point light on the chest for Iron Man
       if (heroId === 'iron_man') {
         const chestLight = new THREE.PointLight(0xffffff, 2.8, 4.5);
-        chestLight.position.set(0, 1.15, 0.45);
-        heroGroup.add(chestLight);
+        chestLight.position.set(0, 0.25, 0.6);
+        wrapper.add(chestLight);
       }
 
-      heroGroup.add(model);
+      heroGroup.add(wrapper);
       updateEquipped3DAccessories();
       if (tagEl) tagEl.textContent = '3D INTERACTIVE BODY MESH';
+
+      // 6. Ensure camera is centered and looking straight at model center
+      if (camera) {
+        camera.position.set(0, 0, 4.8);
+        camera.lookAt(0, 0, 0);
+      }
     }, (xhr) => {
       if (xhr.lengthComputable && tagEl) {
         const pct = Math.round((xhr.loaded / xhr.total) * 100);
@@ -5645,6 +5678,10 @@ function reset3DView() {
   rotY3D = 0; rotX3D = 0;
   autoRotate3D = true;
   updateAutoRotateBtn();
+  if (camera) {
+    camera.position.set(0, 0, 4.8);
+    camera.lookAt(0, 0, 0);
+  }
   if (heroGroup) {
     heroGroup.rotation.y = 0;
     heroGroup.rotation.x = 0;
