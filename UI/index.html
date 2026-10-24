@@ -2063,15 +2063,409 @@ body::after {
   animation: heroFadeUp 0.8s ease-out 0.68s both;
 }
 
-@keyframes heroFadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ============================================================
+   BATTLEFIELD ARENA & COMBATANT ANIMATION STYLES
+============================================================ */
+.fighter-avatar-stage {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.fighter-portrait-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid var(--cyan);
+  background: radial-gradient(circle, rgba(0, 180, 255, 0.2) 0%, rgba(4, 10, 24, 0.95) 80%);
+  box-shadow: 0 0 25px rgba(0, 200, 255, 0.45);
+  z-index: 2;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: battleIdleHero 3.2s ease-in-out infinite alternate;
+}
+
+.fighter-portrait-wrap.thanos-wrap {
+  border-color: var(--red);
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.25) 0%, rgba(20, 4, 12, 0.95) 80%);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+  animation: battleIdleThanos 3.6s ease-in-out infinite alternate;
+}
+
+.fighter-combat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.fighter-combat-img.thanos-img {
+  object-fit: contain;
+  transform: scale(1.05);
+}
+
+.fighter-energy-aura {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 200, 255, 0.28) 0%, transparent 70%);
+  animation: auraPulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fighter-energy-aura.enemy-aura {
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.35) 0%, transparent 70%);
+  animation: auraPulseEnemy 2.8s ease-in-out infinite;
+}
+
+@keyframes battleIdleHero {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-6px) scale(1.02) rotate(0.5deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+
+@keyframes battleIdleThanos {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-7px) scale(1.03) rotate(-0.5deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+
+@keyframes auraPulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.5; }
+  50% { transform: scale(1.18); opacity: 0.95; }
+}
+
+@keyframes auraPulseEnemy {
+  0%, 100% { transform: scale(0.92); opacity: 0.6; }
+  50% { transform: scale(1.22); opacity: 1; }
+}
+
+.battle-stance-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 200, 255, 0.2);
+  border: 1px solid var(--cyan);
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  z-index: 3;
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.4);
+}
+
+.battle-stance-badge.enemy-stance {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: var(--red);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+.infinity-stones-hud {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  background: rgba(10, 4, 18, 0.88);
+  padding: 3px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  z-index: 3;
+}
+
+.stone-gem {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  animation: stoneTwinkle 2s infinite alternate;
+}
+.stone-power { background: #9333ea; color: #a855f7; animation-delay: 0s; }
+.stone-space { background: #2563eb; color: #3b82f6; animation-delay: 0.3s; }
+.stone-reality { background: #dc2626; color: #ef4444; animation-delay: 0.6s; }
+.stone-soul { background: #ea580c; color: #f97316; animation-delay: 0.9s; }
+.stone-time { background: #16a34a; color: #22c55e; animation-delay: 1.2s; }
+.stone-mind { background: #eab308; color: #facc15; animation-delay: 1.5s; }
+
+@keyframes stoneTwinkle {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+.quick-deploy-panel {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.quick-deploy-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.quick-deploy-tokens {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 180px;
+}
+.deploy-token {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.deploy-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.deploy-token:hover {
+  transform: translateY(-2px) scale(1.15);
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+.deploy-token.active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  background: rgba(0, 200, 255, 0.2);
+}
+
+.clash-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.combat-actions-bar {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.btn-combat-action {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.btn-combat-action:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+.btn-combat-action.attack:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 200, 255, 0.6);
+  background: rgba(0, 200, 255, 0.2);
+}
+.btn-combat-action.defense:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.2);
+}
+.btn-combat-action.ultimate:hover {
+  border-color: #a855f7;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.7);
+  background: rgba(168, 85, 247, 0.25);
+}
+
+.fighter-hero.lunge {
+  animation: heroLunge 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.fighter-enemy.lunge {
+  animation: thanosLunge 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes heroLunge {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(50px) scale(1.08); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes thanosLunge {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(-50px) scale(1.08); }
+  100% { transform: translateX(0); }
+}
+
+.combat-float-dmg {
+  position: absolute;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  pointer-events: none;
+  animation: floatDmg 0.85s ease-out forwards;
+  z-index: 100;
+}
+@keyframes floatDmg {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  25% { opacity: 1; transform: translateY(-16px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-44px) scale(1); }
+}
+
+/* ============================================================
+   LOKI GOD OF STORIES (TIMELINE WEAVER)
+============================================================ */
+.loki-timeline-pod {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(2, 44, 34, 0.85) 0%, rgba(6, 20, 15, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loki-throne-visual {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(1, 15, 10, 0.95) 75%);
+  border: 1.5px solid #10b981;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.loki-throne-svg {
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 0 6px #10b981);
+  animation: lokiBreathe 3s ease-in-out infinite alternate;
+}
+
+@keyframes lokiBreathe {
+  0% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 6px #10b981); }
+  50% { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 14px #34d399); }
+  100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 6px #10b981); }
+}
+
+.loki-magic-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%);
+  animation: lokiAuraPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes lokiAuraPulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.4; }
+  50% { transform: scale(1.2); opacity: 0.85; }
+}
+
+.loki-info-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loki-badge-tag {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #34d399;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.loki-title-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.loki-quote-text {
+  font-size: 11px;
+  color: rgba(167, 243, 208, 0.85);
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.btn-loki-weave {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.45) 100%);
+  border: 1px solid #10b981;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.btn-loki-weave:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5) 0%, rgba(5, 150, 105, 0.7) 100%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.timeline-strand-pulse {
+  stroke-dasharray: 8 4;
+  animation: strandFlow 1.6s linear infinite;
+}
+
+@keyframes strandFlow {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.timeline-loki-thread {
+  stroke: #10b981;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 6px #10b981);
+  stroke-dasharray: 6 3;
+  animation: strandFlow 1.2s linear infinite;
 }
 
 </style>
@@ -2113,7 +2507,7 @@ body::after {
 <audio id="avengers-audio" loop preload="auto" src="assets/avengers_official_theme.mp3"></audio>
 
 <!-- ======= FIRST SCREEN: FULL-SCREEN MARVEL LOGO SPLASH ======= -->
-<div id="marvel-intro-screen" onclick="enterMarvelCinematicUniverse()">
+<div id="marvel-intro-screen" onclick="enterMarvelCinematicUniverse(event)">
   <div class="marvel-intro-enter-container">
     <div class="marvel-intro-enter-btn" id="marvel-enter-btn" onclick="enterMarvelCinematicUniverse(event)">
       <span class="enter-text">enter the Marvel Cinematic Universe - where you are the boss</span>
@@ -2123,11 +2517,9 @@ body::after {
 </div>
 
 <!-- ======= SCREEN DISINTEGRATION & SHATTER OVERLAY ======= -->
-<div id="cinematic-warp-overlay" onclick="skipThanosSnap(event)">
+<div id="cinematic-warp-overlay">
   <div id="screen-shatter-stage"></div>
   <canvas id="snap-particle-canvas"></canvas>
-  <div class="snap-flash" id="snap-flash"></div>
-  <div class="snap-shockwave" id="snap-shockwave"></div>
 </div>
 
 <div id="app">
@@ -2519,7 +2911,8 @@ body::after {
           <div class="arena-bg"></div>
           <div class="arena-floor"></div>
           <div class="arena-content">
-            <div class="fighter">
+            <!-- Left: Hero Combatant Stage -->
+            <div class="fighter fighter-hero" id="arena-hero-card">
               <div class="fighter-name-hud" id="arena-hero-name" style="color:var(--cyan)">Iron Man</div>
               <div class="health-hud">
                 <div class="health-track">
@@ -2527,22 +2920,40 @@ body::after {
                 </div>
                 <div class="health-text"><span id="hp-aegis-txt">780 / 780</span><span style="color:var(--cyan)">HP</span></div>
               </div>
-              <div class="fighter-sprite" id="arena-hero-icon">🦾</div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">
-                <span class="badge badge-cyan" style="font-size:9px">⛨ ARC SHIELD ACTIVE</span>
+              <div class="fighter-avatar-stage" id="arena-hero-stage">
+                <div class="fighter-energy-aura" id="hero-aura"></div>
+                <div class="fighter-portrait-wrap" id="arena-hero-portrait-wrap">
+                  <img src="assets/ironman.png" id="arena-hero-img" class="fighter-combat-img" alt="Hero"/>
+                </div>
+                <div class="battle-stance-badge" id="hero-stance-badge">⚔️ COMBAT READY</div>
+              </div>
+              <div class="fighter-buff-strip" id="hero-buff-strip">
+                <span class="badge badge-cyan" id="hero-status-pill" style="font-size:9px">⛨ ARC SHIELD ACTIVE</span>
+              </div>
+              <!-- Quick Deploy Champion Switcher -->
+              <div class="quick-deploy-panel">
+                <div class="quick-deploy-title">DEPLOY CHAMPION</div>
+                <div class="quick-deploy-tokens" id="quick-deploy-tokens"></div>
               </div>
             </div>
 
-            <div style="text-align:center">
+            <!-- Center: Clash Zone & Combat Controls -->
+            <div class="clash-zone">
               <div class="vs-arena">VS</div>
-              <div id="hit-flash" style="font-size:22px;height:32px;display:flex;align-items:center;justify-content:center;"></div>
-              <div class="sim-status" style="justify-content:center;margin-top:8px">
-                <div class="dot-anim" id="sim-dot" style="background:var(--text-dim)"></div>
-                <span id="sim-status-text">Ready to simulate</span>
+              <div id="hit-flash" class="combat-impact-flash" style="font-size:20px;height:32px;display:flex;align-items:center;justify-content:center;"></div>
+              <div class="sim-status" style="justify-content:center;margin-top:4px">
+                <div class="dot-anim" id="sim-dot" style="background:var(--green)"></div>
+                <span id="sim-status-text">Battlefield Active</span>
+              </div>
+              <div class="combat-actions-bar">
+                <button class="btn-combat-action attack" onclick="performCombatMove('attack')" title="Trigger Hero Kinetic Surge">⚡ Surge</button>
+                <button class="btn-combat-action defense" onclick="performCombatMove('counter')" title="Raise Defensive Barrier">🛡️ Block</button>
+                <button class="btn-combat-action ultimate" onclick="performCombatMove('ultimate')" title="Multiverse Ultimate Strike">💥 Strike</button>
               </div>
             </div>
 
-            <div class="fighter">
+            <!-- Right: Thanos Combatant Stage -->
+            <div class="fighter fighter-enemy" id="arena-thanos-card">
               <div class="fighter-name-hud" style="color:var(--red)">Thanos</div>
               <div class="health-hud">
                 <div class="health-track">
@@ -2550,9 +2961,23 @@ body::after {
                 </div>
                 <div class="health-text"><span id="hp-corr-txt">960 / 960</span><span style="color:var(--red)">HP</span></div>
               </div>
-              <div class="fighter-sprite enemy">💎</div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">
-                <span class="badge badge-purple" style="font-size:9px">⚡ INFINITY GAUNTLET</span>
+              <div class="fighter-avatar-stage" id="arena-thanos-stage">
+                <div class="fighter-energy-aura enemy-aura" id="thanos-aura"></div>
+                <div class="fighter-portrait-wrap thanos-wrap">
+                  <img src="assets/thanos.png" class="fighter-combat-img thanos-img" alt="Thanos"/>
+                </div>
+                <div class="infinity-stones-hud">
+                  <span class="stone-gem stone-power" title="Power Stone"></span>
+                  <span class="stone-gem stone-space" title="Space Stone"></span>
+                  <span class="stone-gem stone-reality" title="Reality Stone"></span>
+                  <span class="stone-gem stone-soul" title="Soul Stone"></span>
+                  <span class="stone-gem stone-time" title="Time Stone"></span>
+                  <span class="stone-gem stone-mind" title="Mind Stone"></span>
+                </div>
+                <div class="battle-stance-badge enemy-stance">⚡ GAUNTLET PRIMED</div>
+              </div>
+              <div class="fighter-buff-strip">
+                <span class="badge badge-purple" style="font-size:9px">💎 6 INFINITY STONES</span>
               </div>
             </div>
           </div>
@@ -2591,7 +3016,68 @@ body::after {
     <div id="screen-timeline" class="screen">
       <div class="layout">
         <div class="timeline-graph-panel panel">
-          <div class="panel-header"><span class="dot"></span>Branching Timeline Graph — <span class="text-mono" style="font-size:10px;color:var(--text-dim)">Seed #7F3A9C2D</span></div>
+          <div class="panel-header"><span class="dot"></span>Branching Multiverse Yggdrasil — <span class="text-mono" style="font-size:10px;color:var(--text-dim)">Seed #7F3A9C2D</span></div>
+          
+          <!-- Loki God of Stories Interactive Pod -->
+          <div class="loki-timeline-pod" id="loki-timeline-pod">
+            <div class="loki-throne-visual">
+              <div class="loki-magic-glow"></div>
+              <!-- Loki SVG Illustration in Black & Green Suit with Golden Horned Crown -->
+              <svg class="loki-throne-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Cosmic Multiverse Glow -->
+                <circle cx="32" cy="32" r="28" fill="url(#lokiAuraGrad)" opacity="0.35"/>
+                <defs>
+                  <radialGradient id="lokiAuraGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.9"/>
+                    <stop offset="100%" stop-color="#022c22" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <!-- Throne of Eternity Base -->
+                <path d="M14 55 L50 55 L46 48 L18 48 Z" fill="#1c1917" stroke="#44403c" stroke-width="1"/>
+                <rect x="20" y="47" width="24" height="2" fill="#10b981" opacity="0.6"/>
+                <!-- Loki Dark Forest Green Suit / Tunic -->
+                <path d="M22 48 L20 34 L27 30 L37 30 L44 34 L42 48 Z" fill="#064e3b" stroke="#047857" stroke-width="1"/>
+                <!-- Onyx Black Overcoat & Lapels -->
+                <path d="M26 31 L32 46 L38 31 L35 30 L32 38 L29 30 Z" fill="#090d16" stroke="#1e293b" stroke-width="0.5"/>
+                <!-- Gilded Rune Belt -->
+                <rect x="25" y="44" width="14" height="2" rx="1" fill="#f59e0b"/>
+                <!-- Emerald Cape Drapes -->
+                <path d="M18 34 C16 42 16 50 14 54 C20 52 24 50 24 48" fill="#047857" opacity="0.85"/>
+                <path d="M46 34 C48 42 48 50 50 54 C44 52 40 50 40 48" fill="#047857" opacity="0.85"/>
+                <!-- Seated Cross-Legged Stance -->
+                <ellipse cx="32" cy="50" rx="13" ry="3.5" fill="#064e3b" stroke="#047857" stroke-width="0.8"/>
+                <!-- Hands Holding Glowing Timelines -->
+                <circle cx="16" cy="38" r="4" fill="#10b981" filter="drop-shadow(0 0 5px #34d399)"/>
+                <circle cx="48" cy="38" r="4" fill="#10b981" filter="drop-shadow(0 0 5px #34d399)"/>
+                <!-- Glowing Emerald Timeline Strands Weaving from Hands -->
+                <path d="M16 38 C10 32 6 22 2 16" stroke="#34d399" stroke-width="1.8" stroke-dasharray="3 2"/>
+                <path d="M48 38 C54 32 58 22 62 16" stroke="#34d399" stroke-width="1.8" stroke-dasharray="3 2"/>
+                <path d="M16 38 C12 44 6 48 0 50" stroke="#10b981" stroke-width="1.2" stroke-dasharray="2 2"/>
+                <path d="M48 38 C52 44 58 48 64 50" stroke="#10b981" stroke-width="1.2" stroke-dasharray="2 2"/>
+                <!-- Head -->
+                <ellipse cx="32" cy="24" rx="5" ry="6" fill="#fed7aa"/>
+                <!-- Dark Flowing Hair -->
+                <path d="M26 21 C24 26 24 32 26 34 M38 21 C40 26 40 32 38 34" stroke="#090d16" stroke-width="2.2" stroke-linecap="round"/>
+                <!-- Iconic Horned Crown (God of Stories) -->
+                <path d="M26 21 C27 20 37 20 38 21 L37 23 L27 23 Z" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>
+                <path d="M27 21 C25 14 17 11 13 13 C17 17 24 19 26 22" fill="#f59e0b" stroke="#d97706" stroke-width="0.8"/>
+                <path d="M37 21 C39 14 47 11 51 13 C47 17 40 19 38 22" fill="#f59e0b" stroke="#d97706" stroke-width="0.8"/>
+              </svg>
+            </div>
+            <div class="loki-info-block">
+              <div class="loki-badge-tag">
+                <span>👑 LOKI · GOD OF STORIES</span>
+                <span style="color:var(--text-dim)">·</span>
+                <span style="color:#6ee7b7">CITADEL AT THE END OF TIME</span>
+              </div>
+              <div class="loki-title-text">Yggdrasil Multiverse Weaver</div>
+              <div class="loki-quote-text">“I know what kind of God I need to be. For you. For all of us.”</div>
+            </div>
+            <button class="btn-loki-weave" id="loki-weave-btn" onclick="weaveLokiMultiverseBranch()" title="Weave a new timeline branch with Loki's magic">
+              <span>✦ Weave Multiverse Branch</span>
+            </button>
+          </div>
+
           <div class="timeline-svg-wrap">
             <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
@@ -3025,8 +3511,8 @@ function playThanosSnapSound() {
   }
 }
 
-// High-Performance Hardware-Accelerated Screen Shatter & Disintegration
-function triggerScreenShatterDisintegration(onComplete) {
+// Slow, Cinematic Hardware-Accelerated Screen Shatter & Disintegration
+function triggerScreenShatterDisintegration(onComplete, originX, originY) {
   const intro = document.getElementById('marvel-intro-screen');
   const stage = document.getElementById('screen-shatter-stage');
   if (!intro || !stage) {
@@ -3037,8 +3523,8 @@ function triggerScreenShatterDisintegration(onComplete) {
   // Clear previous shards
   stage.innerHTML = '';
 
-  const cols = 6;
-  const rows = 6;
+  const cols = 8;
+  const rows = 8;
   const shards = [];
 
   const w = window.innerWidth;
@@ -3046,6 +3532,10 @@ function triggerScreenShatterDisintegration(onComplete) {
   const pieceW = Math.ceil(w / cols);
   const pieceH = Math.ceil(h / rows);
   const frag = document.createDocumentFragment();
+
+  const centerX = originX !== undefined ? originX : w * 0.5;
+  const centerY = originY !== undefined ? originY : h * 0.82;
+  const maxDist = Math.hypot(Math.max(centerX, w - centerX), Math.max(centerY, h - centerY)) || 1;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -3059,43 +3549,54 @@ function triggerScreenShatterDisintegration(onComplete) {
       shard.style.backgroundSize = `${w}px ${h}px`;
       frag.appendChild(shard);
 
-      const centerX = w * 0.5;
-      const centerY = h * 0.5;
       const shardCenterX = (c + 0.5) * pieceW;
       const shardCenterY = (r + 0.5) * pieceH;
-      const dirX = (shardCenterX - centerX) / (w * 0.5);
-      const dirY = (shardCenterY - centerY) / (h * 0.5);
+      const dist = Math.hypot(shardCenterX - centerX, shardCenterY - centerY);
+      const norm = dist / maxDist;
 
-      const scatterDist = Math.random() * 350 + 180;
-      const targetX = dirX * scatterDist + (Math.random() * 120 - 60);
-      const targetY = dirY * scatterDist - (Math.random() * 200 + 80);
-      const targetZ = (Math.random() - 0.5) * 400;
-      const rotX = (Math.random() - 0.5) * 360;
-      const rotY = (Math.random() - 0.5) * 360;
-      const rotZ = (Math.random() - 0.5) * 240;
-      const duration = (Math.random() * 0.3 + 1.1).toFixed(2);
-      const delay = (Math.random() * 0.08).toFixed(3);
+      // Staggered delay: pieces near the snap dissolve first, radiating outwards like an organic shockwave
+      const delay = (norm * 1.45 + Math.random() * 0.2).toFixed(2);
+      const duration = (2.1 + Math.random() * 0.5).toFixed(2);
+
+      const dirX = (shardCenterX - centerX) / (w * 0.5 || 1);
+      const targetX = (dirX * 220 + (Math.random() * 100 - 50)).toFixed(1);
+      const targetY = (-(Math.random() * 260 + 120)).toFixed(1); // slow upward floating ash drift
+      const targetZ = ((Math.random() - 0.5) * 350).toFixed(1);
+      const rotX = ((Math.random() - 0.5) * 280).toFixed(1);
+      const rotY = ((Math.random() - 0.5) * 280).toFixed(1);
+      const rotZ = ((Math.random() - 0.5) * 180).toFixed(1);
 
       shards.push({
         element: shard,
-        transform: `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(1)}px, ${targetZ.toFixed(1)}px) rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg) scale(0)`,
-        transition: `transform ${duration}s cubic-bezier(0.16, 0.85, 0.25, 1) ${delay}s, opacity ${duration}s ease-out ${delay}s`
+        transform: `translate3d(${targetX}px, ${targetY}px, ${targetZ}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(0)`,
+        filter: 'brightness(2.2) contrast(1.3) blur(3px)',
+        transition: `transform ${duration}s cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}s, opacity ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s, filter ${duration}s ease-in ${delay}s`
       });
     }
   }
 
-  // Batch insert all 36 shards in a single operation
+  // Batch insert all 64 shards in a single operation
   stage.appendChild(frag);
 
-  // Next frame: trigger smooth GPU transitions
-  requestAnimationFrame(() => {
-    intro.style.opacity = '0';
-    intro.style.pointerEvents = 'none';
+  // Fade button immediately so it doesn't linger
+  const enterContainer = intro.querySelector('.marvel-intro-enter-container');
+  if (enterContainer) {
+    enterContainer.style.transition = 'opacity 0.35s ease-out, transform 0.35s ease-out';
+    enterContainer.style.opacity = '0';
+    enterContainer.style.transform = 'scale(0.95)';
+  }
 
+  // Smoothly fade the underlying intro background over 3.2 seconds so it never vanishes abruptly
+  intro.style.transition = 'opacity 3.2s cubic-bezier(0.4, 0, 0.2, 1)';
+  intro.style.opacity = '0';
+
+  // Next frame: trigger smooth GPU transitions for shards
+  requestAnimationFrame(() => {
     for (let i = 0; i < shards.length; i++) {
       const s = shards[i];
       s.element.style.transition = s.transition;
       s.element.style.transform = s.transform;
+      s.element.style.filter = s.filter;
       s.element.style.opacity = '0';
     }
   });
@@ -3106,7 +3607,7 @@ function triggerScreenShatterDisintegration(onComplete) {
   snapTimeouts.push(setTimeout(() => {
     stage.innerHTML = '';
     if (onComplete) onComplete();
-  }, 1600));
+  }, 3800));
 }
 
 // Lightweight 60 FPS Ash Breeze (Zero context state overhead)
@@ -3120,21 +3621,21 @@ function startSmoothAshCanvas() {
   const h = (canvas.height = window.innerHeight);
 
   const particles = [];
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 150; i++) {
     particles.push({
       x: Math.random() * w,
       y: Math.random() * h,
       size: Math.random() * 2.5 + 1,
-      vx: Math.random() * 4 + 2,
-      vy: -(Math.random() * 3 + 1),
+      vx: Math.random() * 3.5 + 1.2,
+      vy: -(Math.random() * 2.8 + 0.8),
       alpha: Math.random() * 0.8 + 0.2,
-      decay: Math.random() * 0.015 + 0.008
+      decay: Math.random() * 0.007 + 0.003
     });
   }
 
   const startTime = performance.now();
   function render(now) {
-    if (now - startTime > 1800) {
+    if (now - startTime > 3800) {
       ctx.clearRect(0, 0, w, h);
       return;
     }
@@ -3144,7 +3645,7 @@ function startSmoothAshCanvas() {
 
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
-      p.x += p.vx;
+      p.x += p.vx * 0.8;
       p.y += p.vy;
       p.alpha -= p.decay;
       if (p.alpha <= 0) continue;
@@ -3169,6 +3670,9 @@ function enterMarvelCinematicUniverse(e) {
   const warpOverlay = document.getElementById('cinematic-warp-overlay');
   const heroScreen = document.getElementById('screen-hero');
 
+  const clickX = e && e.clientX ? e.clientX : window.innerWidth * 0.5;
+  const clickY = e && e.clientY ? e.clientY : window.innerHeight * 0.82;
+
   // 1. Play synthesized gauntlet snap sound immediately (0ms compute)
   playThanosSnapSound();
 
@@ -3187,27 +3691,27 @@ function enterMarvelCinematicUniverse(e) {
   if (intro) intro.classList.add('intro-shake');
   if (enterBtn) enterBtn.classList.add('clicked');
 
-  // 4. Stage 2 (40ms): Activate overlay and trigger 60fps screen shatter into pieces
+  // 4. Stage 2 (40ms): Activate overlay and trigger slow, cinematic screen shatter into pieces
   snapTimeouts.push(setTimeout(() => {
     if (warpOverlay) warpOverlay.classList.add('active');
     triggerScreenShatterDisintegration(() => {
       finishTransition();
-    });
+    }, clickX, clickY);
   }, 40));
 
-  // 5. Stage 3 (750ms): Staging in Titan Showdown smoothly as pieces disperse
+  // 5. Stage 3 (2200ms): Staging in Titan Showdown smoothly as pieces gently disperse
   snapTimeouts.push(setTimeout(() => {
     if (heroScreen) {
       heroScreen.classList.remove('hero-entrance-active');
       void heroScreen.offsetWidth;
       heroScreen.classList.add('hero-entrance-active');
     }
-  }, 750));
+  }, 2200));
 
-  // 6. Stage 4 (1600ms): Complete cleanup
+  // 6. Stage 4 (3800ms): Complete cleanup
   snapTimeouts.push(setTimeout(() => {
     finishTransition();
-  }, 1600));
+  }, 3800));
 }
 
 function finishTransition() {
@@ -3262,9 +3766,16 @@ function showMarvelIntro() {
   document.body.classList.remove('snap-screen-shake');
 
   if (intro) {
-    intro.classList.remove('dismissed', 'snap-disintegrating', 'warping');
+    intro.classList.remove('dismissed', 'snap-disintegrating', 'warping', 'intro-shake');
     intro.style.opacity = '';
     intro.style.pointerEvents = '';
+    intro.style.backgroundImage = '';
+    intro.style.backgroundColor = '';
+    const enterContainer = intro.querySelector('.marvel-intro-enter-container');
+    if (enterContainer) {
+      enterContainer.style.opacity = '';
+      enterContainer.style.transform = '';
+    }
   }
   if (stage) stage.innerHTML = '';
   if (enterBtn) enterBtn.classList.remove('clicked');
@@ -3282,6 +3793,215 @@ function showMarvelIntro() {
   }
 
   isEnteringUniverse = false;
+}
+
+// ============================================================
+// BATTLEFIELD ARENA INTERACTIVE COMBAT SYSTEM
+// ============================================================
+function initBattlefieldArena() {
+  renderQuickDeployTokens();
+  updateArenaHeroDisplay();
+}
+
+function renderQuickDeployTokens() {
+  const container = document.getElementById('quick-deploy-tokens');
+  if (!container) return;
+  container.innerHTML = CHARS.map((c, i) => `
+    <div class="deploy-token ${i === selectedCharIndex ? 'active' : ''}" 
+         onclick="deployChampionFromArena(${i})" 
+         title="Deploy ${c.name} into battle">
+      <img src="${c.img}" alt="${c.name}"/>
+    </div>
+  `).join('');
+}
+
+function deployChampionFromArena(index) {
+  if (index === selectedCharIndex) return;
+  selectCharacter(index, false);
+  
+  // Flash hero stage
+  const stage = document.getElementById('arena-hero-stage');
+  if (stage) {
+    stage.style.transform = 'scale(1.12)';
+    setTimeout(() => { stage.style.transform = ''; }, 300);
+  }
+  
+  renderQuickDeployTokens();
+  updateArenaHeroDisplay();
+  playCombatSound('deploy');
+  
+  const hero = CHARS[selectedCharIndex];
+  addLog({icon:'⚡', text:`<span class="cyan">${hero.name}</span> deployed into the Arena!`, round:0});
+}
+
+function updateArenaHeroDisplay() {
+  const hero = CHARS[selectedCharIndex];
+  if (!hero) return;
+  
+  const imgEl = document.getElementById('arena-hero-img');
+  if (imgEl && hero.img) imgEl.src = hero.img;
+  
+  const nameEl = document.getElementById('arena-hero-name');
+  if (nameEl) nameEl.textContent = hero.name.split(' ')[0].toUpperCase();
+  
+  const winNameEl = document.getElementById('arena-hero-win-name');
+  if (winNameEl) winNameEl.textContent = hero.name.split(' ')[0];
+  
+  const hpTxt = document.getElementById('hp-aegis-txt');
+  if (hpTxt) hpTxt.textContent = `${hero.attrs.Durability} / ${hero.attrs.Durability}`;
+  
+  const hpFill = document.getElementById('hp-aegis');
+  if (hpFill) hpFill.style.width = '100%';
+  
+  // Update badge stance
+  const stanceBadge = document.getElementById('hero-stance-badge');
+  if (stanceBadge) {
+    const stances = {
+      iron_man: '⚡ ARC REACTOR PRIMED',
+      captain_america: '🛡️ VIBRANIUM STANCE',
+      thor: '⚡ GOD OF THUNDER',
+      hulk: '💥 GAMMA ENRAGED',
+      doctor_strange: '🔮 MYSTIC SHIELD',
+      spider_man: '🕷️ SPIDER-SENSE ACTIVE',
+      deadpool: '⚔️ REGEN ACTIVE',
+      black_panther: '🐾 KINETIC CHARGE'
+    };
+    stanceBadge.textContent = stances[hero.id] || '⚔️ COMBAT READY';
+  }
+  
+  const aura = document.getElementById('hero-aura');
+  if (aura) {
+    const auraColors = {
+      iron_man: 'rgba(0, 200, 255, 0.35)',
+      captain_america: 'rgba(59, 130, 246, 0.35)',
+      thor: 'rgba(234, 179, 8, 0.45)',
+      hulk: 'rgba(34, 197, 94, 0.45)',
+      doctor_strange: 'rgba(249, 115, 22, 0.45)',
+      spider_man: 'rgba(239, 68, 68, 0.35)',
+      deadpool: 'rgba(220, 38, 38, 0.4)',
+      black_panther: 'rgba(168, 85, 247, 0.4)'
+    };
+    aura.style.background = `radial-gradient(circle, ${auraColors[hero.id] || 'rgba(0,200,255,0.3)'} 0%, transparent 70%)`;
+  }
+}
+
+function playCombatSound(type) {
+  try {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'deploy') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+      osc.start(now);
+      osc.stop(now + 0.26);
+    } else if (type === 'attack') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.3);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.31);
+    } else if (type === 'counter') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.setValueAtTime(640, now + 0.05);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.36);
+    } else if (type === 'ultimate') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(960, now + 0.5);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.55);
+      osc.start(now);
+      osc.stop(now + 0.56);
+    }
+  } catch (e) {
+    console.warn('Combat sound error:', e);
+  }
+}
+
+function flashCombatDamage(targetEl, text, color) {
+  if (!targetEl) return;
+  const dmg = document.createElement('div');
+  dmg.className = 'combat-float-dmg';
+  dmg.textContent = text;
+  dmg.style.color = color || 'var(--cyan)';
+  dmg.style.left = '50%';
+  dmg.style.top = '30%';
+  dmg.style.transform = 'translate(-50%, 0)';
+  targetEl.appendChild(dmg);
+  setTimeout(() => { dmg.remove(); }, 850);
+}
+
+function performCombatMove(type) {
+  const heroCard = document.getElementById('arena-hero-card');
+  const thanosCard = document.getElementById('arena-thanos-card');
+  const hero = CHARS[selectedCharIndex];
+  const hitFlash = document.getElementById('hit-flash');
+
+  if (type === 'attack') {
+    if (heroCard) {
+      heroCard.classList.add('lunge');
+      setTimeout(() => heroCard.classList.remove('lunge'), 450);
+    }
+    playCombatSound('attack');
+
+    setTimeout(() => {
+      if (hitFlash) {
+        hitFlash.innerHTML = '<span style="color:var(--cyan)">⚡ DIRECT HIT! ⚡</span>';
+        setTimeout(() => { hitFlash.innerHTML = ''; }, 600);
+      }
+      const thanosDmg = Math.floor(Math.random() * 120 + 80);
+      flashCombatDamage(thanosCard, `-${thanosDmg} DMG`, 'var(--cyan)');
+      addLog({icon:'⚡', text:`<span class="cyan">${hero.name.split(' ')[0]}</span> executes Kinetic Surge for <span class="cyan">${thanosDmg}</span> damage!`, round:'ACT'});
+    }, 200);
+
+  } else if (type === 'counter') {
+    if (thanosCard) {
+      thanosCard.classList.add('lunge');
+      setTimeout(() => thanosCard.classList.remove('lunge'), 450);
+    }
+    playCombatSound('counter');
+
+    setTimeout(() => {
+      if (hitFlash) {
+        hitFlash.innerHTML = '<span style="color:var(--gold)">🛡️ BLOCKED & COUNTERED!</span>';
+        setTimeout(() => { hitFlash.innerHTML = ''; }, 600);
+      }
+      flashCombatDamage(heroCard, `BLOCKED! 🛡️`, 'var(--gold)');
+      addLog({icon:'🛡️', text:`<span class="cyan">${hero.name.split(' ')[0]}</span> raises defense barrier, completely absorbing Thanos's strike!`, round:'ACT'});
+    }, 200);
+
+  } else if (type === 'ultimate') {
+    if (heroCard) {
+      heroCard.classList.add('lunge');
+      setTimeout(() => heroCard.classList.remove('lunge'), 450);
+    }
+    playCombatSound('ultimate');
+
+    setTimeout(() => {
+      if (hitFlash) {
+        hitFlash.innerHTML = '<span style="color:#a855f7;font-size:24px;text-shadow:0 0 15px #a855f7">💥 COSMIC MULTIVERSE STRIKE 💥</span>';
+        setTimeout(() => { hitFlash.innerHTML = ''; }, 800);
+      }
+      const critDmg = Math.floor(Math.random() * 250 + 350);
+      flashCombatDamage(thanosCard, `-${critDmg} CRIT! 💥`, '#a855f7');
+      addLog({icon:'💥', text:`<span class="gold">MULTIVERSE OVERDRIVE</span>: <span class="cyan">${hero.name.split(' ')[0]}</span> unleashes full power for <span class="gold">${critDmg} CRITICAL</span> damage!`, round:'ACT'});
+    }, 220);
+  }
 }
 
 // Allow ESC key to skip snap animation
@@ -3692,6 +4412,8 @@ function applyCharacterSelection(index) {
   renderInventoryRack();
   updateLabSlotCards();
   renderEffectiveAttrs();
+  if (typeof updateArenaHeroDisplay === 'function') updateArenaHeroDisplay();
+  if (typeof renderQuickDeployTokens === 'function') renderQuickDeployTokens();
 }
 
 // ============================================================
@@ -3950,6 +4672,25 @@ function startSim() {
     document.getElementById('lose-pct').textContent = 100-pct;
     document.getElementById('win-bar').style.width = pct+'%';
 
+    // Real-time battlefield combat lunges & damage numbers
+    const heroCard = document.getElementById('arena-hero-card');
+    const thanosCard = document.getElementById('arena-thanos-card');
+    if (simRound % 2 === 1) {
+      if (heroCard) {
+        heroCard.classList.add('lunge');
+        setTimeout(() => heroCard.classList.remove('lunge'), 400);
+      }
+      flashCombatDamage(thanosCard, `-${heroDmg}`, 'var(--cyan)');
+      playCombatSound('attack');
+    } else {
+      if (thanosCard) {
+        thanosCard.classList.add('lunge');
+        setTimeout(() => thanosCard.classList.remove('lunge'), 400);
+      }
+      flashCombatDamage(heroCard, `-${thanosDmg > 70 ? 25 : (thanosDmg * 0.15 | 0)}`, 'var(--red)');
+      playCombatSound('counter');
+    }
+
     if (thanosDmg > 70) flashHit('crit');
     else if (heroDmg < 35) flashHit('block');
     else flashHit('hit');
@@ -4007,69 +4748,159 @@ const NARRATIVES = {
 
 function renderTimeline() {
   const svg = document.getElementById('timeline-svg');
+  if (!svg) return;
   const W = svg.parentElement.clientWidth || 700;
   const H = svg.parentElement.clientHeight || 400;
   const scaleX = (W - 80) / 600;
   const scaleY = (H - 40) / 400;
 
-  function nx(node) { return 30 + node.x * scaleX; }
-  function ny(node) { return 20 + node.y * scaleY; }
+  function nx(node) { return 40 + node.x * scaleX; }
+  function ny(node) { return 30 + node.y * scaleY; }
 
-  svg.innerHTML = `
+  let svgContent = `
     <defs>
-      <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="glow"><feGaussianBlur stdDeviation="3.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="lokiGlow"><feGaussianBlur stdDeviation="4.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <linearGradient id="lokiStrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/>
+        <stop offset="50%" stop-color="#34d399" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#059669" stop-opacity="0.6"/>
+      </linearGradient>
       <marker id="arrow-a" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,200,255,0.5)"/>
+        <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,200,255,0.7)"/>
       </marker>
       <marker id="arrow-b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,140,66,0.5)"/>
+        <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,140,66,0.7)"/>
+      </marker>
+      <marker id="arrow-loki" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="#10b981"/>
       </marker>
     </defs>`;
+
+  // Draw Glowing Yggdrasil Root Strands from Loki's Realm (Top-Left) to Timeline Root & Nodes
+  const rootNode = TL_NODES.find(n => n.id === 'root');
+  if (rootNode) {
+    const rx = nx(rootNode);
+    const ry = ny(rootNode);
+    svgContent += `
+      <!-- Loki Yggdrasil Master Strands -->
+      <path d="M12,12 C${rx*0.3},${ry*0.2} ${rx*0.5},${ry*0.7} ${rx},${ry}"
+        fill="none" stroke="url(#lokiStrandGrad)" stroke-width="2.6"
+        stroke-dasharray="10 5" class="timeline-strand-pulse" filter="url(#lokiGlow)"/>
+      <path d="M12,28 C${rx*0.4},${ry*0.4} ${rx*0.6},${ry*0.9} ${rx},${ry+15}"
+        fill="none" stroke="#34d399" stroke-width="1.6" opacity="0.75"
+        stroke-dasharray="6 4" class="timeline-strand-pulse"/>
+    `;
+  }
 
   // Edges
   TL_EDGES.forEach(e => {
     const from = TL_NODES.find(n=>n.id===e.from);
     const to   = TL_NODES.find(n=>n.id===e.to);
     if (!from || !to) return;
+    const isLoki = to.branch === 'loki' || from.branch === 'loki';
     const isBranchB = to.branch === 'b';
-    const color = isBranchB ? 'rgba(255,140,66,0.45)' : 'rgba(0,200,255,0.45)';
+    const color = isLoki ? '#10b981' : (isBranchB ? 'rgba(255,140,66,0.65)' : 'rgba(0,200,255,0.65)');
+    const marker = isLoki ? 'arrow-loki' : (isBranchB ? 'arrow-b' : 'arrow-a');
     const mid = (nx(from) + nx(to)) / 2;
-    svg.innerHTML += `
-      <path d="M${nx(from)+50},${ny(from)} C${mid},${ny(from)} ${mid},${ny(to)} ${nx(to)},${ny(to)}"
-        fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 3"
-        marker-end="url(#${isBranchB?'arrow-b':'arrow-a'})" />`;
+    
+    svgContent += `
+      <path d="M${nx(from)+55},${ny(from)} C${mid},${ny(from)} ${mid},${ny(to)} ${nx(to)},${ny(to)}"
+        fill="none" stroke="${color}" stroke-width="${isLoki?2.4:1.8}" stroke-dasharray="${isLoki?'6 3':'8 4'}"
+        class="timeline-strand-pulse"
+        marker-end="url(#${marker})" filter="${isLoki?'url(#lokiGlow)':''}" />`;
   });
 
   // Nodes
   TL_NODES.forEach(n => {
     const x = nx(n), y = ny(n);
     const isSelected = n.id === selectedNode;
+    const isLoki = n.branch === 'loki';
     const isBranchB = n.branch === 'b';
-    const strokeColor = isBranchB ? (isSelected ? 'rgba(255,140,66,0.95)' : 'rgba(255,140,66,0.4)') : (isSelected ? 'var(--cyan)' : 'rgba(0,200,255,0.35)');
-    const glowFilter = isSelected ? 'url(#glow)' : '';
+    
+    let strokeColor = 'rgba(0,200,255,0.4)';
+    if (isLoki) strokeColor = isSelected ? '#34d399' : '#10b981';
+    else if (isBranchB) strokeColor = isSelected ? 'rgba(255,140,66,0.95)' : 'rgba(255,140,66,0.4)';
+    else if (isSelected) strokeColor = 'var(--cyan)';
 
-    svg.innerHTML += `
-      <g class="node-card ${isSelected?'active':''} ${isBranchB?'branch-b':''}"
+    const glowFilter = isSelected ? (isLoki ? 'url(#lokiGlow)' : 'url(#glow)') : '';
+
+    svgContent += `
+      <g class="node-card ${isSelected?'active':''} ${isBranchB?'branch-b':''} ${isLoki?'branch-loki':''}"
          onclick="selectTimelineNode('${n.id}')" style="cursor:pointer">
-        <rect x="${x}" y="${y-22}" width="110" height="44" rx="7" ry="7"
-          fill="rgba(8,14,28,0.9)" stroke="${strokeColor}" stroke-width="${isSelected?2.5:1.5}"
+        <rect x="${x}" y="${y-22}" width="118" height="46" rx="8" ry="8"
+          fill="${isLoki?'rgba(2,34,26,0.92)':'rgba(8,14,28,0.92)'}" 
+          stroke="${strokeColor}" stroke-width="${isSelected?2.5:1.5}"
           filter="${glowFilter}" />
         <text x="${x+8}" y="${y-7}" font-family="Rajdhani,sans-serif" font-size="11" font-weight="700"
-          fill="${isBranchB?'rgba(255,140,66,0.9)':'rgba(0,200,255,0.9)'}">${n.label}</text>
+          fill="${isLoki?'#34d399':(isBranchB?'rgba(255,140,66,0.95)':'rgba(0,200,255,0.95)')}">${n.label}</text>
         <text x="${x+8}" y="${y+9}" font-family="Outfit,sans-serif" font-size="10"
-          fill="rgba(180,200,220,0.75)">${n.sub}</text>
+          fill="${isLoki?'rgba(167,243,208,0.85)':'rgba(180,200,220,0.75)'}">${n.sub}</text>
         ${n.outcomes.map((o,i) => `
-          <rect x="${x+8+(i*52)}" y="${y+16}" width="${Math.min(48,o.length*5+8)}" height="12" rx="6"
-            fill="${isBranchB?'rgba(255,140,66,0.12)':'rgba(0,200,255,0.12)'}"
-            stroke="${isBranchB?'rgba(255,140,66,0.4)':'rgba(0,200,255,0.35)'}" stroke-width="0.8"/>
-          <text x="${x+12+(i*52)}" y="${y+25}" font-family="Rajdhani,sans-serif" font-size="7"
-            fill="${isBranchB?'rgba(255,140,66,0.9)':'rgba(0,200,255,0.9)'}">${o}</text>
+          <rect x="${x+8+(i*54)}" y="${y+17}" width="${Math.min(50,o.length*5+8)}" height="13" rx="6"
+            fill="${isLoki?'rgba(16,185,129,0.2)':(isBranchB?'rgba(255,140,66,0.15)':'rgba(0,200,255,0.15)')}"
+            stroke="${isLoki?'#10b981':(isBranchB?'rgba(255,140,66,0.45)':'rgba(0,200,255,0.4)')}" stroke-width="0.8"/>
+          <text x="${x+12+(i*54)}" y="${y+26}" font-family="Rajdhani,sans-serif" font-size="7" font-weight="700"
+            fill="${isLoki?'#6ee7b7':(isBranchB?'rgba(255,140,66,0.95)':'rgba(0,200,255,0.95)')}">${o}</text>
         `).join('')}
       </g>`;
   });
 
+  svg.innerHTML = svgContent;
+
   renderTimelineDetail(selectedNode);
   renderNarrative(selectedNode);
+}
+
+let lokiBranchCount = 1;
+function weaveLokiMultiverseBranch() {
+  const pod = document.getElementById('loki-timeline-pod');
+  const btn = document.getElementById('loki-weave-btn');
+  if (pod) {
+    pod.style.boxShadow = '0 0 40px #10b981, inset 0 0 25px #10b981';
+    setTimeout(() => { pod.style.boxShadow = ''; }, 600);
+  }
+  if (btn) {
+    btn.innerHTML = '<span>⚡ Weaving Multiverse...</span>';
+    setTimeout(() => { btn.innerHTML = '<span>✦ Weave Multiverse Branch</span>'; }, 900);
+  }
+
+  playCombatSound('ultimate');
+
+  const newId = `loki_branch_${lokiBranchCount}`;
+  const char = CHARS[selectedCharIndex];
+  const outcomes = ['FREE WILL', 'YGGDRASIL'];
+
+  const newX = 540;
+  const newY = 220 + (lokiBranchCount * 50) % 160;
+
+  TL_NODES.push({
+    id: newId,
+    x: newX,
+    y: newY,
+    label: `Loki Branch L-${lokiBranchCount}`,
+    sub: `${char.name.split(' ')[0]} Multiverse Destiny`,
+    branch: 'loki',
+    outcomes: outcomes,
+    keyEvents: [
+      `Loki God of Stories weaves ${char.name.split(' ')[0]}'s timeline into Yggdrasil`,
+      'Temporal loom dismantled — free will preserved across all realities',
+      'Multiverse branches flourish in infinite emerald harmony'
+    ]
+  });
+
+  TL_EDGES.push({
+    from: selectedNode || 'root',
+    to: newId
+  });
+
+  NARRATIVES[newId] = `“For you. For all of us.” — Seated upon the throne at the Citadel at the End of Time, Loki holds the pulsating branches of the Multiverse Tree. In Branch L-${lokiBranchCount}, ${char.name} transcends the deterministic cycle, forging an unbroken future where every hero determines their own story.`;
+
+  selectedNode = newId;
+  lokiBranchCount++;
+
+  renderTimeline();
+  addLog({icon:'👑', text:`<span class="green">Loki (God of Stories)</span> wove a new multiverse timeline branch: <strong>Branch L-${lokiBranchCount - 1}</strong>!`, round:'TL'});
 }
 
 function selectTimelineNode(id) {
@@ -4950,6 +5781,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initThreeJS();
   renderInventoryRack();
   updateLabSlotCards();
+  initBattlefieldArena();
+  renderTimeline();
   localStorage.setItem('whatif-theme', 'dark');
   document.documentElement.setAttribute('data-theme', 'dark');
 });
@@ -4960,6 +5793,8 @@ window.addEventListener('DOMContentLoaded', () => {
 renderCharacterLab();
 selectCharacter(0, false);
 renderCodexNav();
+initBattlefieldArena();
+renderTimeline();
 </script>
 </body>
 </html>
