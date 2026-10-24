@@ -461,40 +461,35 @@ body::after {
 }
 
 .char-3d-model-wrapper {
-  width: 320px; height: 420px;
+  width: 540px; height: 560px;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.08s ease-out;
   display: flex; align-items: center; justify-content: center;
-  z-index: 8; margin-top: 50px;
+  z-index: 8; margin-top: 30px;
 }
 
 .char-3d-card {
   width: 100%; height: 100%;
-  border-radius: 16px;
-  overflow: hidden;
+  border-radius: 0;
+  overflow: visible;
   position: relative;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 200, 255, 0.35);
-  border: 1px solid rgba(0, 200, 255, 0.45);
-  background: radial-gradient(ellipse at center, rgba(0,90,180,0.35) 0%, rgba(4,8,20,0.96) 80%);
+  box-shadow: none;
+  border: none;
+  background: transparent;
 }
 
 .char-3d-card img {
-  width: 100%; height: 100%; object-fit: cover; object-position: top;
-  filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.6));
+  width: 100%; height: 100%; object-fit: contain; object-position: center;
+  filter: drop-shadow(0 0 25px rgba(0, 200, 255, 0.4));
 }
 
 .model-scanline {
-  position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(0,200,255,0.08) 50%, transparent 100%);
-  background-size: 100% 12px;
+  display: none;
 }
 
 .model-tech-hud {
-  position: absolute; bottom: 10px; left: 10px; right: 10px;
-  display: flex; justify-content: space-between; align-items: center;
-  background: rgba(4,8,20,0.85); backdrop-filter: blur(8px);
-  padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,200,255,0.3);
+  display: none;
 }
 
 .rotation-bar-hud {
@@ -2837,12 +2832,7 @@ body::after {
 
           <!-- 3D Rotatable Interactive Model Wrapper with Canvas -->
           <div class="char-3d-model-wrapper" id="char-3d-model">
-            <canvas id="three-canvas" style="width:340px; height:440px; display:block; border-radius:16px; box-shadow:0 0 35px rgba(0,200,255,0.4); border:1px solid rgba(0,200,255,0.5); cursor:grab;" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleCanvasDrop(event)"></canvas>
-            <div class="model-scanline"></div>
-            <div class="model-tech-hud">
-              <span class="badge badge-cyan" id="hud-component-tag">3D INTERACTIVE BODY MESH</span>
-              <span style="font-size:9px; color:var(--cyan);">Click/Drag Body Parts to Equip</span>
-            </div>
+            <canvas id="three-canvas" style="width:540px; height:560px; display:block; background:transparent; border:none; box-shadow:none; cursor:grab;" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleCanvasDrop(event)"></canvas>
           </div>
 
           <!-- 3D Rotation Controls -->
@@ -4333,7 +4323,7 @@ function renderCharacterLab() {
     const isVillain = c.faction === 'VILLAIN';
     const has3D = !!c.gltf;
     return `
-      <div class="char-card ${isSelected ? 'selected' : ''}" onclick="selectCharacterInLab(${i})">
+      <div class="char-card ${isSelected ? 'selected' : ''}" onclick="selectCharacter(${i}, true)">
         <div class="char-card-portrait" style="background:#141414; border-bottom:1px solid rgba(255,255,255,0.1); overflow:hidden; position:relative;">
           ${c.img 
             ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;object-position:top;" alt="${c.name}"/>` 
@@ -4371,20 +4361,18 @@ function renderCharacterLab() {
 }
 
 function selectCharacterInLab(index) {
-  selectedCharIndex = index;
-  applyCharacterSelection(index);
-  renderCharacterLab();
+  selectCharacter(index, true);
 }
 
 function openCharacterLabWithHero(heroId) {
   const idx = CHARS.findIndex(c => c.id === heroId);
-  selectCharacterInLab(idx !== -1 ? idx : 0);
-  switchTab('lab');
+  selectCharacter(idx !== -1 ? idx : 0, true);
 }
 
 function enterBattleworldWithHero(heroId) {
   const idx = CHARS.findIndex(c => c.id === heroId);
-  selectCharacterInLab(idx !== -1 ? idx : 0);
+  selectedCharIndex = idx !== -1 ? idx : 0;
+  applyCharacterSelection(selectedCharIndex);
   enterBattleworld();
 }
 
@@ -4475,13 +4463,18 @@ function showCharacterLoader(index, onComplete) {
 }
 
 function selectCharacter(index, doSwitchTab = true) {
+  applyCharacterSelection(index);
   if (doSwitchTab) {
     showCharacterLoader(index, () => {
-      applyCharacterSelection(index);
       switchTab('editor');
+      // Re-trigger Three.js render/resize and model build in case canvas needs refresh
+      if (typeof buildHero3DMesh === 'function') {
+        buildHero3DMesh(CHARS[index].id);
+      }
+      if (typeof onThreeResize === 'function') {
+        onThreeResize();
+      }
     });
-  } else {
-    applyCharacterSelection(index);
   }
 }
 
@@ -5467,8 +5460,8 @@ function initThreeJS() {
   canvas = document.getElementById('three-canvas');
   if (!canvas || typeof THREE === 'undefined') return;
 
-  const width = 340;
-  const height = 440;
+  const width = 540;
+  const height = 560;
 
   // Scene & Raycaster
   scene = new THREE.Scene();
@@ -5478,7 +5471,7 @@ function initThreeJS() {
 
   // Camera - Perfectly aligned at center (0, 0, 0)
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-  camera.position.set(0, 0, 4.8);
+  camera.position.set(0, 0, 4.2);
   camera.lookAt(0, 0, 0);
 
   // Renderer
@@ -5771,13 +5764,13 @@ function buildHero3DMesh(heroId) {
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
-      // 3. Determine ideal target height / dimension for this hero
-      let targetDim = 2.4;
-      if (char.id === 'black_panther') targetDim = 2.1;
-      else if (char.id === 'thor') targetDim = 2.2;
-      else if (char.id === 'hulk') targetDim = 2.3; // Wide muscular build fits canvas with ample breathing room
-      else if (char.id === 'thanos') targetDim = 2.35; // Mad Titan armored physique
-      else if (char.id === 'loki') targetDim = 2.45; // Horned crown & majestic cape silhouette
+      // 3. Determine ideal target height / dimension for this hero (Substantially enlarged for prominence)
+      let targetDim = 3.3;
+      if (char.id === 'black_panther') targetDim = 2.9;
+      else if (char.id === 'thor') targetDim = 3.0;
+      else if (char.id === 'hulk') targetDim = 3.2; // Massive gamma powerhouse
+      else if (char.id === 'thanos') targetDim = 3.25; // Imposing Mad Titan armored presence
+      else if (char.id === 'loki') targetDim = 3.35; // Crowned God of Stories with majestic horned stance
 
       const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
       const scale = targetDim / maxDim;
@@ -5816,11 +5809,10 @@ function buildHero3DMesh(heroId) {
 
       heroGroup.add(wrapper);
       updateEquipped3DAccessories();
-      if (tagEl) tagEl.textContent = '3D INTERACTIVE BODY MESH';
 
       // 6. Ensure camera is centered and looking straight at model center
       if (camera) {
-        camera.position.set(0, 0, 4.8);
+        camera.position.set(0, 0, 4.2);
         camera.lookAt(0, 0, 0);
       }
     }, (xhr) => {
@@ -6059,7 +6051,7 @@ function reset3DView() {
   autoRotate3D = true;
   updateAutoRotateBtn();
   if (camera) {
-    camera.position.set(0, 0, 4.8);
+    camera.position.set(0, 0, 4.2);
     camera.lookAt(0, 0, 0);
   }
   if (heroGroup) {
