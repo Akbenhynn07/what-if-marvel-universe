@@ -2340,8 +2340,8 @@ body::after {
 .loki-timeline-pod {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, rgba(2, 44, 34, 0.85) 0%, rgba(6, 20, 15, 0.95) 100%);
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(2, 44, 34, 0.88) 0%, rgba(6, 20, 15, 0.96) 100%);
   border: 1px solid rgba(16, 185, 129, 0.45);
   box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(16, 185, 129, 0.15);
   border-radius: var(--radius-sm);
@@ -2351,31 +2351,49 @@ body::after {
   overflow: hidden;
 }
 
-.loki-throne-visual {
+.loki-3d-throne-wrap {
   position: relative;
-  width: 58px;
-  height: 58px;
-  border-radius: 12px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(1, 15, 10, 0.95) 75%);
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(1, 15, 10, 0.95) 80%);
   border: 1.5px solid #10b981;
-  box-shadow: 0 0 18px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.55), inset 0 0 15px rgba(16, 185, 129, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  cursor: grab;
+  user-select: none;
+  overflow: hidden;
 }
 
-.loki-throne-svg {
-  width: 52px;
-  height: 52px;
-  filter: drop-shadow(0 0 6px #10b981);
-  animation: lokiBreathe 3s ease-in-out infinite alternate;
+.loki-3d-throne-wrap:active {
+  cursor: grabbing;
 }
 
-@keyframes lokiBreathe {
-  0% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 6px #10b981); }
-  50% { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 14px #34d399); }
-  100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 6px #10b981); }
+#loki-3d-canvas {
+  width: 90px;
+  height: 90px;
+  display: block;
+}
+
+.loki-3d-badge {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(2, 44, 34, 0.85);
+  border: 0.5px solid #34d399;
+  border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #34d399;
+  padding: 1px 4px;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .loki-magic-glow {
@@ -3020,49 +3038,10 @@ body::after {
           
           <!-- Loki God of Stories Interactive Pod -->
           <div class="loki-timeline-pod" id="loki-timeline-pod">
-            <div class="loki-throne-visual">
+            <div class="loki-3d-throne-wrap" id="loki-3d-container" title="Drag to rotate Loki 3D Model">
               <div class="loki-magic-glow"></div>
-              <!-- Loki SVG Illustration in Black & Green Suit with Golden Horned Crown -->
-              <svg class="loki-throne-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Cosmic Multiverse Glow -->
-                <circle cx="32" cy="32" r="28" fill="url(#lokiAuraGrad)" opacity="0.35"/>
-                <defs>
-                  <radialGradient id="lokiAuraGrad" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.9"/>
-                    <stop offset="100%" stop-color="#022c22" stop-opacity="0"/>
-                  </radialGradient>
-                </defs>
-                <!-- Throne of Eternity Base -->
-                <path d="M14 55 L50 55 L46 48 L18 48 Z" fill="#1c1917" stroke="#44403c" stroke-width="1"/>
-                <rect x="20" y="47" width="24" height="2" fill="#10b981" opacity="0.6"/>
-                <!-- Loki Dark Forest Green Suit / Tunic -->
-                <path d="M22 48 L20 34 L27 30 L37 30 L44 34 L42 48 Z" fill="#064e3b" stroke="#047857" stroke-width="1"/>
-                <!-- Onyx Black Overcoat & Lapels -->
-                <path d="M26 31 L32 46 L38 31 L35 30 L32 38 L29 30 Z" fill="#090d16" stroke="#1e293b" stroke-width="0.5"/>
-                <!-- Gilded Rune Belt -->
-                <rect x="25" y="44" width="14" height="2" rx="1" fill="#f59e0b"/>
-                <!-- Emerald Cape Drapes -->
-                <path d="M18 34 C16 42 16 50 14 54 C20 52 24 50 24 48" fill="#047857" opacity="0.85"/>
-                <path d="M46 34 C48 42 48 50 50 54 C44 52 40 50 40 48" fill="#047857" opacity="0.85"/>
-                <!-- Seated Cross-Legged Stance -->
-                <ellipse cx="32" cy="50" rx="13" ry="3.5" fill="#064e3b" stroke="#047857" stroke-width="0.8"/>
-                <!-- Hands Holding Glowing Timelines -->
-                <circle cx="16" cy="38" r="4" fill="#10b981" filter="drop-shadow(0 0 5px #34d399)"/>
-                <circle cx="48" cy="38" r="4" fill="#10b981" filter="drop-shadow(0 0 5px #34d399)"/>
-                <!-- Glowing Emerald Timeline Strands Weaving from Hands -->
-                <path d="M16 38 C10 32 6 22 2 16" stroke="#34d399" stroke-width="1.8" stroke-dasharray="3 2"/>
-                <path d="M48 38 C54 32 58 22 62 16" stroke="#34d399" stroke-width="1.8" stroke-dasharray="3 2"/>
-                <path d="M16 38 C12 44 6 48 0 50" stroke="#10b981" stroke-width="1.2" stroke-dasharray="2 2"/>
-                <path d="M48 38 C52 44 58 48 64 50" stroke="#10b981" stroke-width="1.2" stroke-dasharray="2 2"/>
-                <!-- Head -->
-                <ellipse cx="32" cy="24" rx="5" ry="6" fill="#fed7aa"/>
-                <!-- Dark Flowing Hair -->
-                <path d="M26 21 C24 26 24 32 26 34 M38 21 C40 26 40 32 38 34" stroke="#090d16" stroke-width="2.2" stroke-linecap="round"/>
-                <!-- Iconic Horned Crown (God of Stories) -->
-                <path d="M26 21 C27 20 37 20 38 21 L37 23 L27 23 Z" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>
-                <path d="M27 21 C25 14 17 11 13 13 C17 17 24 19 26 22" fill="#f59e0b" stroke="#d97706" stroke-width="0.8"/>
-                <path d="M37 21 C39 14 47 11 51 13 C47 17 40 19 38 22" fill="#f59e0b" stroke="#d97706" stroke-width="0.8"/>
-              </svg>
+              <canvas id="loki-3d-canvas"></canvas>
+              <div class="loki-3d-badge">3D INTERACTIVE</div>
             </div>
             <div class="loki-info-block">
               <div class="loki-badge-tag">
@@ -4850,6 +4829,380 @@ function renderTimeline() {
 
   renderTimelineDetail(selectedNode);
   renderNarrative(selectedNode);
+  initLoki3D();
+}
+
+// ============================================================
+// 3D LOKI GOD OF STORIES (SEATED AT THRONE OF ETERNITY)
+// ============================================================
+let lokiScene = null, lokiCamera = null, lokiRenderer = null;
+let lokiGroup = null, lokiParticles = null;
+let lokiRotY = 0.25, lokiRotX = 0.05;
+let isLokiDragging = false, lokiStartX = 0, lokiStartY = 0;
+let lokiAnimId = null;
+
+function initLoki3D() {
+  const canvas = document.getElementById('loki-3d-canvas');
+  if (!canvas || typeof THREE === 'undefined') return;
+  if (lokiRenderer) {
+    // If already initialized, just ensure dimensions are synchronized
+    return;
+  }
+
+  const w = 90;
+  const h = 90;
+
+  lokiScene = new THREE.Scene();
+  lokiCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+  lokiCamera.position.set(0, 0.45, 3.4);
+  lokiCamera.lookAt(0, 0.2, 0);
+
+  lokiRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  lokiRenderer.setSize(w, h);
+  lokiRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  lokiRenderer.shadowMap.enabled = true;
+  lokiRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  lokiRenderer.toneMappingExposure = 1.35;
+
+  // Studio & Celestial Lighting
+  const ambLight = new THREE.AmbientLight(0x064e3b, 1.8);
+  lokiScene.add(ambLight);
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  keyLight.position.set(3, 4, 3);
+  lokiScene.add(keyLight);
+
+  const emeraldRim = new THREE.DirectionalLight(0x34d399, 2.8);
+  emeraldRim.position.set(-3, 2, -2);
+  lokiScene.add(emeraldRim);
+
+  const throneLight = new THREE.PointLight(0x10b981, 3.2, 5);
+  throneLight.position.set(0, 0.3, 0.8);
+  lokiScene.add(throneLight);
+
+  // Group container
+  lokiGroup = new THREE.Group();
+  lokiScene.add(lokiGroup);
+
+  // Build Seated Loki God of Stories Model
+  buildLokiSittingModel(lokiGroup);
+
+  // Floating Yggdrasil Magic Particles
+  const pCount = 45;
+  const pGeo = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 0.5 + Math.random() * 0.9;
+    pPos[i * 3] = Math.cos(angle) * r;
+    pPos[i * 3 + 1] = (Math.random() - 0.4) * 1.6;
+    pPos[i * 3 + 2] = Math.sin(angle) * r;
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({
+    color: 0x34d399,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending
+  });
+  lokiParticles = new THREE.Points(pGeo, pMat);
+  lokiGroup.add(lokiParticles);
+
+  // Drag interaction to inspect 3D Loki
+  const container = document.getElementById('loki-3d-container');
+  if (container) {
+    container.addEventListener('mousedown', (e) => {
+      isLokiDragging = true;
+      lokiStartX = e.clientX;
+      lokiStartY = e.clientY;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isLokiDragging || !lokiGroup) return;
+      const dx = e.clientX - lokiStartX;
+      const dy = e.clientY - lokiStartY;
+      lokiRotY += dx * 0.02;
+      lokiRotX += dy * 0.015;
+      lokiRotX = Math.max(-0.35, Math.min(0.4, lokiRotX));
+      lokiGroup.rotation.y = lokiRotY;
+      lokiGroup.rotation.x = lokiRotX;
+      lokiStartX = e.clientX;
+      lokiStartY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => {
+      isLokiDragging = false;
+    });
+
+    // Touch support for mobile / touchpads
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isLokiDragging = true;
+        lokiStartX = e.touches[0].clientX;
+        lokiStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (!isLokiDragging || !lokiGroup || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - lokiStartX;
+      const dy = e.touches[0].clientY - lokiStartY;
+      lokiRotY += dx * 0.02;
+      lokiRotX += dy * 0.015;
+      lokiRotX = Math.max(-0.35, Math.min(0.4, lokiRotX));
+      lokiGroup.rotation.y = lokiRotY;
+      lokiGroup.rotation.x = lokiRotX;
+      lokiStartX = e.touches[0].clientX;
+      lokiStartY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchend', () => {
+      isLokiDragging = false;
+    });
+  }
+
+  animateLoki3D();
+}
+
+function buildLokiSittingModel(group) {
+  // PBR Materials
+  const blackSuitMat = new THREE.MeshStandardMaterial({
+    color: 0x11161d,
+    roughness: 0.45,
+    metalness: 0.35
+  });
+  const emeraldMat = new THREE.MeshStandardMaterial({
+    color: 0x064e3b,
+    roughness: 0.3,
+    metalness: 0.5,
+    emissive: 0x022c22,
+    emissiveIntensity: 0.35
+  });
+  const goldCrownMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    roughness: 0.18,
+    metalness: 0.95,
+    emissive: 0xb45309,
+    emissiveIntensity: 0.25
+  });
+  const fleshMat = new THREE.MeshStandardMaterial({
+    color: 0xf9d5b8,
+    roughness: 0.6,
+    metalness: 0.05
+  });
+  const darkHairMat = new THREE.MeshStandardMaterial({
+    color: 0x07090e,
+    roughness: 0.75,
+    metalness: 0.1
+  });
+  const magicGlowMat = new THREE.MeshBasicMaterial({
+    color: 0x34d399,
+    transparent: true,
+    opacity: 0.85
+  });
+  const throneStoneMat = new THREE.MeshStandardMaterial({
+    color: 0x1f242d,
+    roughness: 0.8,
+    metalness: 0.25
+  });
+
+  // 1. Throne of Eternity (Citadel at the End of Time)
+  const throneBase = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 0.25, 1.1),
+    throneStoneMat
+  );
+  throneBase.position.set(0, -0.65, 0);
+  group.add(throneBase);
+
+  const throneBack = new THREE.Mesh(
+    new THREE.BoxGeometry(1.0, 1.4, 0.18),
+    throneStoneMat
+  );
+  throneBack.position.set(0, 0.1, -0.45);
+  group.add(throneBack);
+
+  // Throne Rune Accents (Glowing Emerald)
+  const runeBar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 0.04, 0.02),
+    magicGlowMat
+  );
+  runeBar.position.set(0, 0.65, -0.35);
+  group.add(runeBar);
+
+  // 2. Seated Torso (Black and Forest Green Tunic)
+  const torso = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.28, 0.65, 16),
+    blackSuitMat
+  );
+  torso.position.set(0, -0.1, 0);
+  group.add(torso);
+
+  // Emerald Chest Vest & Draped Scarf
+  const vest = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.29, 0.42, 16, 1, false, 0, Math.PI * 1.3),
+    emeraldMat
+  );
+  vest.position.set(0, -0.05, 0.01);
+  vest.rotation.y = -Math.PI * 0.65;
+  group.add(vest);
+
+  // Gilded Belt with Asgardian Clasp
+  const belt = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.285, 0.285, 0.06, 16),
+    goldCrownMat
+  );
+  belt.position.set(0, -0.36, 0);
+  group.add(belt);
+
+  // 3. Seated Cross-Legged Lower Body
+  const leftThigh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.11, 0.52, 12),
+    blackSuitMat
+  );
+  leftThigh.rotation.z = Math.PI / 2.3;
+  leftThigh.rotation.y = -0.35;
+  leftThigh.position.set(-0.3, -0.48, 0.18);
+  group.add(leftThigh);
+
+  const rightThigh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.11, 0.52, 12),
+    blackSuitMat
+  );
+  rightThigh.rotation.z = -Math.PI / 2.3;
+  rightThigh.rotation.y = 0.35;
+  rightThigh.position.set(0.3, -0.48, 0.18);
+  group.add(rightThigh);
+
+  const crossLegs = new THREE.Mesh(
+    new THREE.TorusGeometry(0.38, 0.1, 10, 24, Math.PI),
+    blackSuitMat
+  );
+  crossLegs.rotation.x = Math.PI / 2;
+  crossLegs.rotation.z = Math.PI;
+  crossLegs.position.set(0, -0.56, 0.26);
+  group.add(crossLegs);
+
+  // 4. Arms Holding Glowing Multiverse Timeline Strands
+  // Left Arm (Outstretched forward with hands cupped)
+  const armL = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 0.46, 12),
+    blackSuitMat
+  );
+  armL.rotation.z = Math.PI / 3.4;
+  armL.rotation.x = 0.4;
+  armL.position.set(-0.34, 0.02, 0.22);
+  group.add(armL);
+
+  const handL = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 12, 12),
+    fleshMat
+  );
+  handL.position.set(-0.48, 0.12, 0.38);
+  group.add(handL);
+
+  // Right Arm (Outstretched forward holding branches)
+  const armR = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 0.46, 12),
+    blackSuitMat
+  );
+  armR.rotation.z = -Math.PI / 3.4;
+  armR.rotation.x = 0.4;
+  armR.position.set(0.34, 0.02, 0.22);
+  group.add(armR);
+
+  const handR = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 12, 12),
+    fleshMat
+  );
+  handR.position.set(0.48, 0.12, 0.38);
+  group.add(handR);
+
+  // 5. Glowing Multiverse Yggdrasil Strands Emanating from Loki's Hands
+  const strandL = new THREE.Mesh(
+    new THREE.TorusGeometry(0.18, 0.022, 12, 24),
+    magicGlowMat
+  );
+  strandL.position.set(-0.48, 0.12, 0.38);
+  strandL.rotation.y = 0.5;
+  group.add(strandL);
+
+  const strandR = new THREE.Mesh(
+    new THREE.TorusGeometry(0.18, 0.022, 12, 24),
+    magicGlowMat
+  );
+  strandR.position.set(0.48, 0.12, 0.38);
+  strandR.rotation.y = -0.5;
+  group.add(strandR);
+
+  // 6. Head, Long Dark Flowing Hair & Majestic Horned Crown
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 20, 20),
+    fleshMat
+  );
+  head.position.set(0, 0.44, 0.05);
+  group.add(head);
+
+  // Long flow of dark hair draping back
+  const hair = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.24, 0.45, 14),
+    darkHairMat
+  );
+  hair.position.set(0, 0.34, -0.06);
+  group.add(hair);
+
+  // Golden Crown Circlet
+  const crownRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.19, 0.035, 14, 24),
+    goldCrownMat
+  );
+  crownRing.position.set(0, 0.48, 0.06);
+  crownRing.rotation.x = Math.PI / 2.3;
+  group.add(crownRing);
+
+  // Majestic Swept Horns (God of Stories / King of Yggdrasil)
+  // Left Horn
+  const hornCurveL = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.16, 0.52, 0.06),
+    new THREE.Vector3(-0.35, 0.72, 0.02),
+    new THREE.Vector3(-0.44, 0.95, -0.08),
+    new THREE.Vector3(-0.32, 1.15, -0.16)
+  ]);
+  const hornGeoL = new THREE.TubeGeometry(hornCurveL, 20, 0.038, 8, false);
+  const hornL = new THREE.Mesh(hornGeoL, goldCrownMat);
+  group.add(hornL);
+
+  // Right Horn
+  const hornCurveR = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.16, 0.52, 0.06),
+    new THREE.Vector3(0.35, 0.72, 0.02),
+    new THREE.Vector3(0.44, 0.95, -0.08),
+    new THREE.Vector3(0.32, 1.15, -0.16)
+  ]);
+  const hornGeoR = new THREE.TubeGeometry(hornCurveR, 20, 0.038, 8, false);
+  const hornR = new THREE.Mesh(hornGeoR, goldCrownMat);
+  group.add(hornR);
+
+  // Gentle Emerald Heart Core / Story Magic in Chest
+  const chestOrb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 12, 12),
+    magicGlowMat
+  );
+  chestOrb.position.set(0, 0.08, 0.24);
+  group.add(chestOrb);
+}
+
+function animateLoki3D() {
+  lokiAnimId = requestAnimationFrame(animateLoki3D);
+
+  if (lokiRenderer && lokiScene && lokiCamera) {
+    if (!isLokiDragging && lokiGroup) {
+      // Gentle mystical breathing & floating weave oscillation
+      lokiRotY += 0.005;
+      lokiGroup.rotation.y = lokiRotY;
+      lokiGroup.position.y = Math.sin(Date.now() * 0.0022) * 0.04;
+    }
+    if (lokiParticles) {
+      lokiParticles.rotation.y -= 0.008;
+    }
+    lokiRenderer.render(lokiScene, lokiCamera);
+  }
 }
 
 let lokiBranchCount = 1;
