@@ -1970,7 +1970,8 @@ body::after {
   background-size: 100vw 100vh;
   background-repeat: no-repeat;
   will-change: transform, opacity;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   transform-origin: center center;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
   border: 0.5px solid rgba(255, 255, 255, 0.15);
@@ -2527,6 +2528,119 @@ body::after {
   animation: strandFlow 1.2s linear infinite;
 }
 
+/* Dedicated Cinematic Video Modal Overlay */
+#marvel-video-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(4, 8, 16, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#marvel-video-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.video-modal-container {
+  position: relative;
+  width: 90vw;
+  max-width: 1080px;
+  background: #080c14;
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0, 200, 255, 0.3), 0 20px 60px rgba(0, 0, 0, 0.9);
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#marvel-video-modal.active .video-modal-container {
+  transform: scale(1);
+}
+
+.video-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(10, 16, 28, 0.95);
+  border-bottom: 1px solid rgba(0, 200, 255, 0.25);
+}
+
+.video-modal-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #00e5ff;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.video-modal-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.video-modal-close:hover {
+  background: rgba(239, 68, 68, 0.8);
+  border-color: #ef4444;
+  transform: scale(1.1);
+}
+
+.video-modal-body {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+}
+
+.video-modal-body video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.btn-card-cinematic {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.45) 100%);
+  border: 1px solid #ef4444;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.btn-card-cinematic:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.6) 0%, rgba(185, 28, 28, 0.8) 100%);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+  transform: translateY(-2px);
+}
 </style>
 </head>
 <body>
@@ -2569,7 +2683,7 @@ body::after {
 <div id="marvel-intro-screen">
   <!-- Marvel Studios Cinematic Intro Video -->
   <video id="marvel-intro-video" playsinline preload="auto">
-    <source src="assets/marvel_intro.mp4" type="video/mp4">
+    <source src="assets/marvel_intro_44.mp4" type="video/mp4">
   </video>
 
   <!-- Skip Video Button -->
@@ -2589,6 +2703,23 @@ body::after {
 <div id="cinematic-warp-overlay">
   <div id="screen-shatter-stage"></div>
   <canvas id="snap-particle-canvas"></canvas>
+</div>
+
+<!-- ======= DEDICATED CINEMATIC VIDEO MODAL ======= -->
+<div id="marvel-video-modal" onclick="closeCinematicVideo(event)">
+  <div class="video-modal-container" onclick="event.stopPropagation()">
+    <div class="video-modal-header">
+      <div class="video-modal-title" id="video-modal-title">
+        <span>🎬</span> <span id="video-modal-name">MARVEL CINEMATIC EXPERIENCE</span>
+      </div>
+      <button class="video-modal-close" onclick="closeCinematicVideo(event)" title="Close Video">✕</button>
+    </div>
+    <div class="video-modal-body">
+      <video id="marvel-modal-player" controls playsinline preload="auto">
+        <source id="marvel-modal-source" src="" type="video/mp4">
+      </video>
+    </div>
+  </div>
 </div>
 
 <div id="app">
@@ -2632,22 +2763,29 @@ body::after {
 
       <!-- MAIN HERO STAGE: IRON MAN & THANOS TITAN SHOWDOWN -->
       <div class="hero-cinematic-stage">
-        <div class="hero-img-container titan-container" onclick="openCharacterLabWithHero('iron_man')" style="cursor:pointer;" title="Click to open Character Laboratory with Iron Man">
+        <div class="hero-img-container titan-container" onclick="playIronManVsThanosVideo(event)" style="cursor:pointer;" title="Click to Watch: Iron-Man vs Thanos Edit [Bloody Mary]">
           <img src="assets/ironman_thanos_hd.png" alt="Thanos and Iron Man Confrontation on Titan" class="hero-main-img titan-img"/>
           <div class="hero-vignette-overlay titan-vignette"></div>
           <div class="titan-dust-glow"></div>
 
+          <!-- Play Video Indicator Badge -->
+          <div style="position:absolute; top:20px; right:20px; z-index:4; display:flex; gap:8px;">
+            <button class="btn-card-cinematic" onclick="event.stopPropagation(); playIronManVsThanosVideo(event)">
+              🎬 PLAY 4K EDIT
+            </button>
+          </div>
+
           <!-- Scene Stamp -->
           <div class="hero-scene-stamp">
             <span class="stamp-badge">AVENGERS: INFINITY WAR / ENDGAME NEXUS</span>
-            <span class="stamp-text">THE BATTLE OF TITAN · IRON MAN MARK L vs THANOS</span>
+            <span class="stamp-text">THE BATTLE OF TITAN · IRON MAN MARK L vs THANOS · [CLICK TO PLAY 4K EDIT]</span>
           </div>
         </div>
 
         <!-- CINEMATIC BRIEFING & ACTIONS -->
         <div class="hero-briefing-card titan-card">
           <div class="hero-meta-strip">
-            <span class="hero-pill-red">⚔️ TITAN SHOWDOWN</span>
+            <span class="hero-pill-red" onclick="playIronManVsThanosVideo(event)" style="cursor:pointer;">⚔️ TITAN SHOWDOWN (▶ 4K)</span>
             <span class="hero-pill-gold">⚛️ 3D MODEL ACTIVE</span>
             <span class="hero-pill-cyan">🌌 14,000,605 TIMELINES</span>
             <span class="hero-pill-green">👑 WHERE YOU ARE THE BOSS</span>
@@ -2666,20 +2804,23 @@ body::after {
             customize Stark's nanotech armor in the 3D Transformation Lab, run the real-time simulation, and rewrite history across infinite branches.
           </p>
 
-          <!-- DEDICATED HERO WIDGET: DIRECT TO CHARACTER LAB -->
-          <div class="hero-ironman-widget" onclick="openCharacterLabWithHero('iron_man')" title="Click to view Iron Man in Character Laboratory">
+          <!-- DEDICATED HERO WIDGET: DIRECT TO CHARACTER LAB OR VIDEO -->
+          <div class="hero-ironman-widget" onclick="playIronManPrivatizedWorldPeaceVideo(event)" title="Click to Watch: Iron Man - Successfully Privatized World Peace [4K]">
             <div class="widget-avatar-wrap">
               <img src="assets/ironman.png" class="widget-avatar-img" alt="Iron Man"/>
             </div>
             <div class="widget-info">
-              <div class="widget-tag">ACTIVE HERO WIDGET · MARK LXXXV</div>
+              <div class="widget-tag">ACTIVE HERO · MARK LXXXV</div>
               <div class="widget-name">IRON MAN (TONY STARK)</div>
-              <div class="widget-hint">CLICK TO OPEN CHARACTER LABORATORY →</div>
+              <div class="widget-hint">🎬 CLICK TO PLAY: "PRIVATIZED WORLD PEACE" (4K) →</div>
             </div>
-            <button class="btn-widget-open">Open Character Lab 👥</button>
+            <button class="btn-card-cinematic" onclick="event.stopPropagation(); playIronManPrivatizedWorldPeaceVideo(event)">▶ 4K Edit</button>
           </div>
 
           <div class="hero-actions-group">
+            <button class="btn-card-cinematic" onclick="playIronManVsThanosVideo(event)" style="font-size:12px; padding:10px 18px;">
+              🎬 Watch Iron Man vs Thanos Edit
+            </button>
             <button class="btn-hero-primary" onclick="openCharacterLabWithHero('iron_man')">
               👥 Open Character Lab (Iron Man)
             </button>
@@ -3588,6 +3729,13 @@ function triggerScreenShatterDisintegration(onComplete, originX, originY) {
       shard.style.height = (pieceH + 1) + 'px';
       shard.style.backgroundPosition = `-${c * pieceW}px -${r * pieceH}px`;
       shard.style.backgroundSize = `${w}px ${h}px`;
+      shard.style.pointerEvents = 'auto';
+      shard.style.cursor = 'pointer';
+      shard.title = 'Click to Watch: Iron Man - Successfully Privatized World Peace [4K]';
+      shard.onclick = (e) => {
+        e.stopPropagation();
+        playIronManPrivatizedWorldPeaceVideo(e);
+      };
       frag.appendChild(shard);
 
       const shardCenterX = (c + 0.5) * pieceW;
@@ -3896,6 +4044,74 @@ function setupMarvelIntroVideo() {
       video.play().catch(e => console.warn("Video autoplay blocked:", e));
     });
   }
+}
+
+// ============================================================
+// DEDICATED MARVEL 4K VIDEO PLAYER CONTROLLER
+// ============================================================
+let wasThemePlayingBeforeVideo = false;
+
+function openCinematicVideo(videoSrc, title) {
+  const modal = document.getElementById('marvel-video-modal');
+  const player = document.getElementById('marvel-modal-player');
+  const source = document.getElementById('marvel-modal-source');
+  const titleEl = document.getElementById('video-modal-name');
+  const avengersAudio = document.getElementById('avengers-audio');
+
+  if (!modal || !player || !source) return;
+
+  // Temporarily pause background theme so video audio is crisp and isolated
+  if (avengersAudio && !avengersAudio.paused) {
+    wasThemePlayingBeforeVideo = true;
+    avengersAudio.pause();
+    isThemePlaying = false;
+    updateAudioHUDs(false);
+  } else {
+    wasThemePlayingBeforeVideo = false;
+  }
+
+  if (titleEl && title) titleEl.textContent = title;
+  source.src = videoSrc;
+  player.load();
+  modal.classList.add('active');
+
+  const playPromise = player.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(err => {
+      console.warn("User interaction required to start video:", err);
+    });
+  }
+}
+
+function closeCinematicVideo(e) {
+  if (e) e.stopPropagation();
+  const modal = document.getElementById('marvel-video-modal');
+  const player = document.getElementById('marvel-modal-player');
+  const avengersAudio = document.getElementById('avengers-audio');
+
+  if (player) {
+    player.pause();
+    player.currentTime = 0;
+  }
+  if (modal) modal.classList.remove('active');
+
+  // Resume Avengers background theme if it was playing before
+  if (wasThemePlayingBeforeVideo && avengersAudio) {
+    avengersAudio.play().then(() => {
+      isThemePlaying = true;
+      updateAudioHUDs(true);
+    }).catch(err => console.warn(err));
+  }
+}
+
+function playIronManPrivatizedWorldPeaceVideo(e) {
+  if (e) e.stopPropagation();
+  openCinematicVideo('assets/iron_man_privatized_world_peace.mp4', 'IRON MAN · PRIVATIZED WORLD PEACE [4K EDIT]');
+}
+
+function playIronManVsThanosVideo(e) {
+  if (e) e.stopPropagation();
+  openCinematicVideo('assets/iron_man_vs_thanos_edit.mp4', 'IRON MAN vs THANOS · BLOODY MARY ATTITUDE [4K EDIT]');
 }
 
 // ============================================================
@@ -4270,6 +4486,10 @@ function renderEndgameGrid(filter = currentEndgameFilter) {
             <div class="mini-stat"><span class="k">ATK</span><span class="v">${c.attrs.Attack}</span></div>
           </div>
           <div class="endgame-card-actions">
+            ${c.id === 'iron_man' ? `
+            <button class="btn-card-cinematic" onclick="playIronManPrivatizedWorldPeaceVideo(event)" title="Play 4K Edit: Successfully Privatized World Peace">
+              🎬 4K Edit
+            </button>` : ''}
             <button class="btn-card-primary" onclick="selectHeroAndTransform('${c.id}')">
               ${has3D ? '🔬 Open in 3D Lab' : '🔬 Select & Transform'}
             </button>
@@ -4352,6 +4572,10 @@ function renderCharacterLab() {
           <button class="btn-card-bw" onclick="event.stopPropagation(); enterBattleworldWithHero('${c.id}')" title="Deploy ${c.name} directly into Battleworld">
             ⚔️ Battleworld
           </button>
+          ${c.id === 'iron_man' ? `
+          <button class="btn-card-cinematic" onclick="event.stopPropagation(); playIronManPrivatizedWorldPeaceVideo(event)" title="Play 4K Edit: Successfully Privatized World Peace">
+            🎬 4K Edit
+          </button>` : ''}
           <button class="btn-card-3d" onclick="event.stopPropagation(); selectCharacter(${i}, true)" title="Open ${c.name} in 3D Transformation Lab">
             ${has3D ? '🔬 Launch 3D Model' : '🔬 3D Transform'}
           </button>
